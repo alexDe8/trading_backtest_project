@@ -11,7 +11,9 @@ class RSIStrategy(BaseStrategy):
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:
-        return df["r"] < self.ov
+        r = df["r"]
+        return (r.shift(1) <= self.ov) & (r > self.ov)
 
     def exit_signal(self, df: pd.DataFrame) -> pd.Series:
-        return df["r"] > 50
+        r = df["r"]
+        return (r.shift(1) <= 50) & (r > 50)
