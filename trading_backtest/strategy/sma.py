@@ -11,12 +11,16 @@ class SMACrossoverStrategy(BaseStrategy):
         sma_trend: int | None,
         sl_pct: float,
         tp_pct: float,
-        position_size: int,
-        trailing_stop_pct: float,
+        position_size: float = 1.0,
+        trailing_stop_pct: float | None = None,
     ) -> None:
-        super().__init__(sl_pct, tp_pct, trailing_stop_pct)
+        super().__init__(
+            sl_pct,
+            tp_pct,
+            trailing_stop_pct=trailing_stop_pct,
+            position_size=position_size,
+        )
         self.f, self.s, self.tr = sma_fast, sma_slow, sma_trend
-        self.position_size = position_size
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         df["f"] = df[f"sma_{self.f}"]

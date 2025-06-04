@@ -80,4 +80,4 @@ def test_optimize_instantiates_strategies():
         ),
     ]
     for cls, space, prune in configs:
-        optimize_with_optuna(df, cls, space, prune_logic=prune, n_trials=1)
+        optimize_with_optuna(df, cls, space, prune_logic=prune, n_trials=2)

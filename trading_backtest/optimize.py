@@ -51,6 +51,7 @@ PARAM_SPACES = {
     },
 }
 
+
 # ---------------------- SUGGEST UNIVERSALE ---------------------------
 def suggest(trial, param_info, name=None):
     t, *args = param_info
@@ -80,6 +81,7 @@ def suggest(trial, param_info, name=None):
     else:
         raise ValueError(f"[ERROR] Tipo di parametro non gestito: {t}")
 
+
 # ---------------------- PRUNE -----------------------------
 def prune_sma(params, trial):
     if params["sma_fast"] >= params["sma_slow"]:
@@ -87,40 +89,54 @@ def prune_sma(params, trial):
     if params["sl_pct"] >= params["tp_pct"]:
         raise optuna.TrialPruned()
 
+
 def prune_rsi(params, trial):
     if params["sl_pct"] >= params["tp_pct"]:
         raise optuna.TrialPruned()
+
 
 def prune_breakout(params, trial):
     if params["sl_pct"] >= params["tp_pct"]:
         raise optuna.TrialPruned()
 
+
 def prune_bollinger(params, trial):
     if params["sl_pct"] >= params["tp_pct"]:
         raise optuna.TrialPruned()
+
 
 def prune_momentum(params, trial):
     if params["sl_pct"] >= params["tp_pct"]:
         raise optuna.TrialPruned()
 
+
 def prune_vol_expansion(params, trial):
     if params["sl_pct"] >= params["tp_pct"]:
         raise optuna.TrialPruned()
+
 
 # ---------------------- STRATEGY EVALUATION -----------------------------
 def evaluate_strategy(df: pd.DataFrame, make_strategy: Callable[[], Any]) -> float:
     strat = make_strategy()
     trades = strat.generate_trades(df)
-    return PerformanceAnalyzer(trades, commission=0.1, slippage=0.05).total_return()
+    position_size = getattr(strat, "position_size", 1.0)
+    return PerformanceAnalyzer(
+        trades, commission=0.1, slippage=0.05, position_size=position_size
+    ).total_return()
+
 
 # ---------------------- OBJECTIVE GENERICO ---------------------------
 def make_objective(df: pd.DataFrame, strategy_cls, param_space, prune_logic=None):
     def objective(trial):
-        params = {name: suggest(trial, info, name=name) for name, info in param_space.items()}
+        params = {
+            name: suggest(trial, info, name=name) for name, info in param_space.items()
+        }
         if prune_logic is not None:
             prune_logic(params, trial)
         return evaluate_strategy(df, lambda: strategy_cls(**params))
+
     return objective
+
 
 # ---------------------- OPTIMIZZA GENERICO ---------------------------
 def optimize_with_optuna(
@@ -132,8 +148,10 @@ def optimize_with_optuna(
     log.info("🏆 Best params: %s (%.2f%%)", study.best_params, study.best_value)
     return study.best_trial
 
+
 # ---------------------- RETROCOMPATIBILITA' SMA ----------------------
 from .strategy.sma import SMACrossoverStrategy
+
 
 def optimize_sma(df: pd.DataFrame, n_trials: int = 300):
     return optimize_with_optuna(
@@ -144,11 +162,14 @@ def optimize_sma(df: pd.DataFrame, n_trials: int = 300):
         n_trials=n_trials,
     )
 
+
 # ---------------------- GRIGLIA RAFFINATA ---------------------------
 from itertools import product
 
+
 def _around(val: int, step: int, n: int = 2) -> list[int]:
     return [val + i * step for i in range(-n, n + 1) if val + i * step > 0]
+
 
 def refined_sma_grid(best: dict[str, Any]) -> list[dict[str, Any]]:
     grid = []
@@ -173,6 +194,7 @@ def refined_sma_grid(best: dict[str, Any]) -> list[dict[str, Any]]:
         )
     return grid
 
+
 # ---------------------- GRID SEARCH ---------------------------
 def grid_search(df: pd.DataFrame, combos: list[dict[str, Any]]) -> pd.DataFrame:
     log.info("Grid SMA – %d combo", len(combos))
@@ -181,4 +203,3 @@ def grid_search(df: pd.DataFrame, combos: list[dict[str, Any]]) -> pd.DataFrame:
         ret = evaluate_strategy(df, lambda p=p: SMACrossoverStrategy(**p))
         results.append({**p, "total_return": ret})
     return pd.DataFrame(results).sort_values("total_return", ascending=False)
-

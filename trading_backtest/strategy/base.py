@@ -9,11 +9,16 @@ class BaseStrategy(ABC):
     """Scheletro comune per strategie long-only."""
 
     def __init__(
-        self, sl_pct: float, tp_pct: float, trailing_stop_pct: float | None = None
+        self,
+        sl_pct: float,
+        tp_pct: float,
+        trailing_stop_pct: float | None = None,
+        position_size: float = 1.0,
     ) -> None:
         self.sl_pct = sl_pct
         self.tp_pct = tp_pct
         self.trailing_stop_pct = trailing_stop_pct
+        self.position_size = position_size
 
     # ---------------- hooks da implementare --------------
     @abstractmethod
