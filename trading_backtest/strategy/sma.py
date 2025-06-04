@@ -32,7 +32,3 @@ class SMACrossoverStrategy(BaseStrategy):
     def exit_signal(self, df: pd.DataFrame) -> pd.Series:
         return df["f"] < df["s"]
 
-    # Nuova logica per il trailing stop
-    def trailing_stop(self, entry_price: float, current_price: float) -> float:
-        trailing_stop_price = entry_price * (1 - self.trailing_stop_pct / 100)
-        return trailing_stop_price if current_price > entry_price else entry_price
