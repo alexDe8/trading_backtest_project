@@ -15,4 +15,3 @@ logging.basicConfig(
     force=True,
 )
 log = logging.getLogger("trading_backtest")
-

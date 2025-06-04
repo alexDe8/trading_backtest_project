@@ -1,8 +1,11 @@
 import pandas as pd
 from .base import BaseStrategy
 
+
 class VolatilityExpansionStrategy(BaseStrategy):
-    def __init__(self, vol_window:int, vol_threshold:float, sl_pct:float, tp_pct:float):
+    def __init__(
+        self, vol_window: int, vol_threshold: float, sl_pct: float, tp_pct: float
+    ):
         super().__init__(sl_pct, tp_pct)
         self.w, self.th = vol_window, vol_threshold
 
@@ -18,7 +21,7 @@ class VolatilityExpansionStrategy(BaseStrategy):
 
 
 class MomentumImpulseStrategy(BaseStrategy):
-    def __init__(self, window:int, threshold:float, sl_pct:float, tp_pct:float):
+    def __init__(self, window: int, threshold: float, sl_pct: float, tp_pct: float):
         super().__init__(sl_pct, tp_pct)
         self.w, self.t = window, threshold
 

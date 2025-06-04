@@ -1,8 +1,9 @@
 import pandas as pd
 from .base import BaseStrategy
 
+
 class BollingerBandStrategy(BaseStrategy):
-    def __init__(self, period:int, nstd:float, sl_pct:float, tp_pct:float):
+    def __init__(self, period: int, nstd: float, sl_pct: float, tp_pct: float):
         super().__init__(sl_pct, tp_pct)
         self.p, self.n = period, nstd
 
