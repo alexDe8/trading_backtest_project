@@ -31,4 +31,3 @@ class SMACrossoverStrategy(BaseStrategy):
 
     def exit_signal(self, df: pd.DataFrame) -> pd.Series:
         return df["f"] < df["s"]
-
