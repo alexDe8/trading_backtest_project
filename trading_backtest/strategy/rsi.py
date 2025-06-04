@@ -1,8 +1,9 @@
 import pandas as pd
 from .base import BaseStrategy
 
+
 class RSIStrategy(BaseStrategy):
-    def __init__(self, period:int, oversold:int, sl_pct:float, tp_pct:float):
+    def __init__(self, period: int, oversold: int, sl_pct: float, tp_pct: float):
         super().__init__(sl_pct, tp_pct)
         self.p, self.ov = period, oversold
 
