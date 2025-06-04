@@ -5,7 +5,15 @@ import pandas as pd
 import optuna
 from tqdm import tqdm
 from .performance import PerformanceAnalyzer
-from .config import log
+from .config import (
+    log,
+    SMAConfig,
+    RSIConfig,
+    BreakoutConfig,
+    BollingerConfig,
+    MomentumConfig,
+    VolExpansionConfig,
+)
 
 # ---------------------- PARAMETRI STRATEGIE --------------------------
 PARAM_SPACES = {
@@ -123,24 +131,36 @@ def evaluate_strategy(df: pd.DataFrame, make_strategy: Callable[[], Any]) -> flo
 
 
 # ---------------------- OBJECTIVE GENERICO ---------------------------
-def make_objective(df: pd.DataFrame, strategy_cls, param_space, prune_logic=None):
+def make_objective(
+    df: pd.DataFrame,
+    strategy_cls,
+    config_cls,
+    param_space,
+    prune_logic=None,
+):
     def objective(trial):
         params = {
             name: suggest(trial, info, name=name) for name, info in param_space.items()
         }
         if prune_logic is not None:
             prune_logic(params, trial)
-        return evaluate_strategy(df, lambda: strategy_cls(**params))
+        config = config_cls(**params)
+        return evaluate_strategy(df, lambda: strategy_cls(config))
 
     return objective
 
 
 # ---------------------- OPTIMIZZA GENERICO ---------------------------
 def optimize_with_optuna(
-    df: pd.DataFrame, strategy_cls, param_space, prune_logic=None, n_trials: int = 300
+    df: pd.DataFrame,
+    strategy_cls,
+    config_cls,
+    param_space,
+    prune_logic=None,
+    n_trials: int = 300,
 ) -> optuna.FrozenTrial:
     study = optuna.create_study(direction="maximize")
-    objective = make_objective(df, strategy_cls, param_space, prune_logic)
+    objective = make_objective(df, strategy_cls, config_cls, param_space, prune_logic)
     study.optimize(objective, n_trials=n_trials, show_progress_bar=True)
     try:
         trial = study.best_trial
@@ -160,6 +180,7 @@ def optimize_sma(df: pd.DataFrame, n_trials: int = 300):
     return optimize_with_optuna(
         df,
         SMACrossoverStrategy,
+        SMAConfig,
         PARAM_SPACES["sma"],
         prune_logic=prune_sma,
         n_trials=n_trials,
@@ -203,6 +224,7 @@ def grid_search(df: pd.DataFrame, combos: list[dict[str, Any]]) -> pd.DataFrame:
     log.info("Grid SMA – %d combo", len(combos))
     results = []
     for p in tqdm(combos, desc="SMA"):
-        ret = evaluate_strategy(df, lambda p=p: SMACrossoverStrategy(**p))
+        cfg = SMAConfig(**p)
+        ret = evaluate_strategy(df, lambda cfg=cfg: SMACrossoverStrategy(cfg))
         results.append({**p, "total_return": ret})
     return pd.DataFrame(results).sort_values("total_return", ascending=False)

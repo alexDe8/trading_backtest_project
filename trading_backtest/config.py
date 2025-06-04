@@ -15,3 +15,58 @@ logging.basicConfig(
     force=True,
 )
 log = logging.getLogger("trading_backtest")
+
+from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass
+class SMAConfig:
+    sma_fast: int
+    sma_slow: int
+    sma_trend: Optional[int]
+    sl_pct: float
+    tp_pct: float
+    position_size: float
+    trailing_stop_pct: float
+
+
+@dataclass
+class RSIConfig:
+    period: int
+    oversold: int
+    sl_pct: float
+    tp_pct: float
+
+
+@dataclass
+class BreakoutConfig:
+    lookback: int
+    atr_period: int
+    atr_mult: float
+    sl_pct: float
+    tp_pct: float
+
+
+@dataclass
+class BollingerConfig:
+    period: int
+    nstd: float
+    sl_pct: float
+    tp_pct: float
+
+
+@dataclass
+class MomentumConfig:
+    window: int
+    threshold: float
+    sl_pct: float
+    tp_pct: float
+
+
+@dataclass
+class VolExpansionConfig:
+    vol_window: int
+    vol_threshold: float
+    sl_pct: float
+    tp_pct: float

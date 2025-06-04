@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from .config import DATA_FILE, log
+from .utils.io_utils import load_csv
 
 
 class DataFormatError(Exception):
@@ -45,7 +46,6 @@ def load_price_data(data_file: Path = DATA_FILE) -> pd.DataFrame:
     except KeyError as e:
         log.error("Missing expected columns in %s: %s", data_file, e)
         raise DataFormatError(str(e)) from e
-
     return df
 
 

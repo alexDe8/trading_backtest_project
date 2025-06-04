@@ -1,20 +1,15 @@
 import pandas as pd
 from .base import BaseStrategy
+from ..config import BreakoutConfig
 
 
 class BreakoutStrategy(BaseStrategy):
     """Breakout del massimo recente + filtro ATR."""
 
-    def __init__(
-        self,
-        lookback: int,
-        atr_period: int,
-        atr_mult: float,
-        sl_pct: float,
-        tp_pct: float,
-    ):
-        super().__init__(sl_pct, tp_pct)
-        self.lb, self.ap, self.m = lookback, atr_period, atr_mult
+    def __init__(self, config: BreakoutConfig):
+        super().__init__(config.sl_pct, config.tp_pct)
+        self.lb, self.ap, self.m = config.lookback, config.atr_period, config.atr_mult
+        self.config = config
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         h_col = f"hmax_{self.lb}"
