@@ -1,22 +1,15 @@
 from __future__ import annotations
 import pandas as pd
 from .base import BaseStrategy
+from ..config import SMAConfig
 
 
 class SMACrossoverStrategy(BaseStrategy):
-    def __init__(
-        self,
-        sma_fast: int,
-        sma_slow: int,
-        sma_trend: int | None,
-        sl_pct: float,
-        tp_pct: float,
-        position_size: int,
-        trailing_stop_pct: float,
-    ) -> None:
-        super().__init__(sl_pct, tp_pct, trailing_stop_pct)
-        self.f, self.s, self.tr = sma_fast, sma_slow, sma_trend
-        self.position_size = position_size
+    def __init__(self, config: SMAConfig) -> None:
+        super().__init__(config.sl_pct, config.tp_pct, config.trailing_stop_pct)
+        self.f, self.s, self.tr = config.sma_fast, config.sma_slow, config.sma_trend
+        self.position_size = config.position_size
+        self.config = config
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         df["f"] = df[f"sma_{self.f}"]
