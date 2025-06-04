@@ -14,3 +14,35 @@ python run.py
 
 Alternatively, place the CSV file at the default location and simply run
 `python run.py`.
+
+## Setup
+
+Before running the project or the test suite make sure all dependencies are
+installed:
+
+```bash
+pip install -r requirements.txt
+# or use the helper script
+./setup.sh
+```
+
+## Strategy usage
+
+Each strategy exposes a `generate_trades(df)` method. The SMA crossover strategy
+accepts an additional `position_size` parameter used to size trades:
+
+```python
+from trading_backtest.strategy.sma import SMACrossoverStrategy
+
+strat = SMACrossoverStrategy(
+    sma_fast=10,
+    sma_slow=50,
+    sma_trend=200,
+    sl_pct=5,
+    tp_pct=20,
+    position_size=0.1,
+    trailing_stop_pct=2.0,
+)
+trades = strat.generate_trades(df)
+```
+
