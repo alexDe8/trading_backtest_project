@@ -1,13 +1,13 @@
 import pandas as pd
 from .base import BaseStrategy
+from ..config import MomentumConfig, VolExpansionConfig
 
 
 class VolatilityExpansionStrategy(BaseStrategy):
-    def __init__(
-        self, vol_window: int, vol_threshold: float, sl_pct: float, tp_pct: float
-    ):
-        super().__init__(sl_pct, tp_pct)
-        self.w, self.th = vol_window, vol_threshold
+    def __init__(self, config: VolExpansionConfig):
+        super().__init__(config.sl_pct, config.tp_pct)
+        self.w, self.th = config.vol_window, config.vol_threshold
+        self.config = config
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         df["v"] = df[f"vol_{self.w}"]
@@ -21,9 +21,10 @@ class VolatilityExpansionStrategy(BaseStrategy):
 
 
 class MomentumImpulseStrategy(BaseStrategy):
-    def __init__(self, window: int, threshold: float, sl_pct: float, tp_pct: float):
-        super().__init__(sl_pct, tp_pct)
-        self.w, self.t = window, threshold
+    def __init__(self, config: MomentumConfig):
+        super().__init__(config.sl_pct, config.tp_pct)
+        self.w, self.t = config.window, config.threshold
+        self.config = config
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         df["imp"] = df[f"impulse_{self.w}"]

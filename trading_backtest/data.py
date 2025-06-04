@@ -4,10 +4,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from .config import DATA_FILE, log
+from .utils.io_utils import load_csv
 
 
 def load_price_data(data_file: Path = DATA_FILE) -> pd.DataFrame:
-    df = pd.read_csv(data_file)
+    df = load_csv(data_file)
     df["timestamp"] = pd.to_datetime(df["Open time"], errors="coerce")
     rename = {
         "Open": "open",

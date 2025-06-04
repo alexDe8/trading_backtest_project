@@ -24,6 +24,14 @@ from trading_backtest.strategy.momentum import (
     MomentumImpulseStrategy,
     VolatilityExpansionStrategy,
 )
+from trading_backtest.config import (
+    SMAConfig,
+    RSIConfig,
+    BreakoutConfig,
+    BollingerConfig,
+    MomentumConfig,
+    VolExpansionConfig,
+)
 
 
 def _dummy_df() -> pd.DataFrame:
@@ -68,16 +76,17 @@ def _dummy_df() -> pd.DataFrame:
 def test_optimize_instantiates_strategies():
     df = _dummy_df()
     configs = [
-        (SMACrossoverStrategy, PARAM_SPACES["sma"], prune_sma),
-        (RSIStrategy, PARAM_SPACES["rsi"], prune_rsi),
-        (BreakoutStrategy, PARAM_SPACES["breakout"], prune_breakout),
-        (BollingerBandStrategy, PARAM_SPACES["bollinger"], prune_bollinger),
-        (MomentumImpulseStrategy, PARAM_SPACES["momentum"], prune_momentum),
+        (SMACrossoverStrategy, SMAConfig, PARAM_SPACES["sma"], prune_sma),
+        (RSIStrategy, RSIConfig, PARAM_SPACES["rsi"], prune_rsi),
+        (BreakoutStrategy, BreakoutConfig, PARAM_SPACES["breakout"], prune_breakout),
+        (BollingerBandStrategy, BollingerConfig, PARAM_SPACES["bollinger"], prune_bollinger),
+        (MomentumImpulseStrategy, MomentumConfig, PARAM_SPACES["momentum"], prune_momentum),
         (
             VolatilityExpansionStrategy,
+            VolExpansionConfig,
             PARAM_SPACES["vol_expansion"],
             prune_vol_expansion,
         ),
     ]
-    for cls, space, prune in configs:
-        optimize_with_optuna(df, cls, space, prune_logic=prune, n_trials=1)
+    for cls, cfg_cls, space, prune in configs:
+        optimize_with_optuna(df, cls, cfg_cls, space, prune_logic=prune, n_trials=1)
