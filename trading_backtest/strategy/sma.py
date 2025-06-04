@@ -2,14 +2,21 @@ from __future__ import annotations
 import pandas as pd
 from .base import BaseStrategy
 
+
 class SMACrossoverStrategy(BaseStrategy):
-    def __init__(self, sma_fast:int, sma_slow:int,
-                 sma_trend:int|None, sl_pct:float, tp_pct:float,
-                 position_size:int, trailing_stop_pct:float) -> None:
-        super().__init__(sl_pct, tp_pct)
+    def __init__(
+        self,
+        sma_fast: int,
+        sma_slow: int,
+        sma_trend: int | None,
+        sl_pct: float,
+        tp_pct: float,
+        position_size: int,
+        trailing_stop_pct: float,
+    ) -> None:
+        super().__init__(sl_pct, tp_pct, trailing_stop_pct)
         self.f, self.s, self.tr = sma_fast, sma_slow, sma_trend
         self.position_size = position_size
-        self.trailing_stop_pct = trailing_stop_pct
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         df["f"] = df[f"sma_{self.f}"]
@@ -29,4 +36,3 @@ class SMACrossoverStrategy(BaseStrategy):
     def trailing_stop(self, entry_price: float, current_price: float) -> float:
         trailing_stop_price = entry_price * (1 - self.trailing_stop_pct / 100)
         return trailing_stop_price if current_price > entry_price else entry_price
-
