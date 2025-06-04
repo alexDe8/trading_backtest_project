@@ -31,6 +31,12 @@ from .strategy.bollinger import BollingerBandStrategy
 from .strategy.momentum import MomentumImpulseStrategy, VolatilityExpansionStrategy
 
 
+def run_reference_strategy(df: pd.DataFrame, strategy_instance) -> float:
+    """Return total return for a given strategy instance."""
+    trades = strategy_instance.generate_trades(df)
+    return PerformanceAnalyzer(trades).total_return()
+
+
 def main() -> None:
     # 1) Dati + indicatori -------------------------------------------------
     df = load_price_data(DATA_FILE)
@@ -61,48 +67,40 @@ def main() -> None:
     other.append(
         {
             "strategy": "RSI",
-            "total_return": PerformanceAnalyzer(
-                RSIStrategy(RSIConfig(14, 30, 7, 20)).generate_trades(df)
-            ).total_return(),
+            "total_return": run_reference_strategy(df, RSIStrategy(14, 30, 7, 20)),
         }
     )
     other.append(
         {
             "strategy": "Breakout",
-            "total_return": PerformanceAnalyzer(
-                BreakoutStrategy(BreakoutConfig(55, 14, 1.0, 7, 20)).generate_trades(df)
-            ).total_return(),
+            "total_return": run_reference_strategy(
+                df, BreakoutStrategy(55, 14, 1.0, 7, 20)
+            ),
         }
     )
     vol_thr = df["vol_50"].quantile(0.80)
     other.append(
         {
             "strategy": "VolExpansion",
-            "total_return": PerformanceAnalyzer(
-                VolatilityExpansionStrategy(
-                    VolExpansionConfig(50, vol_thr, 7, 20)
-                ).generate_trades(df)
-            ).total_return(),
+            "total_return": run_reference_strategy(
+                df, VolatilityExpansionStrategy(50, vol_thr, 7, 20)
+            ),
         }
     )
     other.append(
         {
             "strategy": "Bollinger",
-            "total_return": PerformanceAnalyzer(
-                BollingerBandStrategy(BollingerConfig(20, 2.0, 7, 15)).generate_trades(
-                    df
-                )
-            ).total_return(),
+            "total_return": run_reference_strategy(
+                df, BollingerBandStrategy(20, 2.0, 7, 15)
+            ),
         }
     )
     other.append(
         {
             "strategy": "Momentum",
-            "total_return": PerformanceAnalyzer(
-                MomentumImpulseStrategy(
-                    MomentumConfig(10, 0.02, 7, 20)
-                ).generate_trades(df)
-            ).total_return(),
+            "total_return": run_reference_strategy(
+                df, MomentumImpulseStrategy(10, 0.02, 7, 20)
+            ),
         }
     )
 
@@ -114,3 +112,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
