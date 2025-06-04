@@ -5,16 +5,26 @@ import numpy as np
 import pandas as pd
 from .config import DATA_FILE, log
 
+
 def load_price_data(data_file: Path = DATA_FILE) -> pd.DataFrame:
     df = pd.read_csv(data_file)
     df["timestamp"] = pd.to_datetime(df["Open time"], errors="coerce")
-    rename = {"Open":"open", "High":"high", "Low":"low",
-              "Close":"close", "Volume":"volume"}
+    rename = {
+        "Open": "open",
+        "High": "high",
+        "Low": "low",
+        "Close": "close",
+        "Volume": "volume",
+    }
     for old, new in rename.items():
         df[new] = pd.to_numeric(df[old], errors="coerce")
-    df = (df.dropna(subset=["timestamp","open","high","low","close"])
-            .sort_values("timestamp").reset_index(drop=True))
+    df = (
+        df.dropna(subset=["timestamp", "open", "high", "low", "close"])
+        .sort_values("timestamp")
+        .reset_index(drop=True)
+    )
     return df
+
 
 def add_indicator_cache(
     df: pd.DataFrame,
