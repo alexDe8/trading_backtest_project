@@ -56,7 +56,7 @@ def suggest(trial, param_info, name=None):
     t, *args = param_info
     if name is None:
         raise ValueError("Parametro 'name' mancante in suggest()!")
-    print(f"[DEBUG SUGGEST] {name}: tipo={t}, args={args}")
+    log.debug("[DEBUG SUGGEST] %s: tipo=%s, args=%s", name, t, args)
     if t == "int":
         low, high, *rest = args
         if low > high:
