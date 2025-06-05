@@ -1,10 +1,5 @@
-import pathlib
-import sys
-
 import pandas as pd
 import numpy as np
-
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 from trading_backtest.optimize import (
     optimize_with_optuna,
