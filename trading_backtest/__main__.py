@@ -95,6 +95,18 @@ def main(with_ml: bool = False) -> None:
         choices=list(STRATEGY_REGISTRY.keys()),
         help="Strategy name to optimize (overrides STRATEGY env var)",
     )
+    parser.add_argument(
+        "--trials",
+        type=int,
+        default=int(os.getenv("TRIALS", 300)),
+        help="Number of Optuna trials (env TRIALS)",
+    )
+    parser.add_argument(
+        "--benchmark",
+        action="store_true",
+        default=os.getenv("BENCHMARK", "0") == "1",
+        help="Run benchmark for all strategies (env BENCHMARK=1)",
+    )
     args = parser.parse_args()
 
     strategy_name = args.strategy or os.getenv("STRATEGY", "sma")
@@ -102,6 +114,8 @@ def main(with_ml: bool = False) -> None:
         raise SystemExit(f"Unknown strategy '{strategy_name}'")
 
     strategy_cls, config_cls, param_space, prune_func = STRATEGY_REGISTRY[strategy_name]
+
+    n_trials = args.trials
 
     # 1) Dati + indicatori -------------------------------------------------
     df = load_price_data(DATA_FILE)
@@ -118,25 +132,27 @@ def main(with_ml: bool = False) -> None:
     )
 
     # 2) Optuna (modulare!) ------------------------------------------------
-    best_trial = optimize_with_optuna(
-        df,
-        strategy_cls,
-        config_cls,
-        param_space,
-        prune_logic=prune_func,
-        n_trials=300,
-    )
+    if not args.benchmark:
+        best_trial = optimize_with_optuna(
+            df,
+            strategy_cls,
+            config_cls,
+            param_space,
+            prune_logic=prune_func,
+            n_trials=n_trials,
+        )
 
-    if strategy_name == "sma":
+    if not args.benchmark and strategy_name == "sma":
         sma_grid = refined_sma_grid(best_trial.params)
         grid_df = grid_search(df, sma_grid)
         save_csv(grid_df, RESULTS_FILE)
         log.info("Grid SMA salvato in %s", RESULTS_FILE)
 
     # 3) Benchmark completo: classiche + ML -------------------------------
-    summary = benchmark_strategies(df, n_trials=25, with_ml=with_ml)
-    log.info("Riepilogo strategie salvato in %s", SUMMARY_FILE)
-    log.info("=== PERFORMANCE ===\n%s", summary.to_string(index=False))
+    if args.benchmark:
+        summary = benchmark_strategies(df, n_trials=n_trials, with_ml=with_ml)
+        log.info("Riepilogo strategie salvato in %s", SUMMARY_FILE)
+        log.info("=== PERFORMANCE ===\n%s", summary.to_string(index=False))
 
 
 if __name__ == "__main__":
