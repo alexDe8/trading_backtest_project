@@ -30,5 +30,6 @@ def test_trailing_stop_closes_trade():
     strat = DummyStrategy(sl_pct=0, tp_pct=100, trailing_stop_pct=5)
     trades = strat.generate_trades(df)
     assert len(trades) == 1
-    exit_price = trades.iloc[0]["exit"]
-    assert exit_price == pytest.approx(110 * (1 - 0.05))
+    trade = trades.iloc[0]
+    assert trade["qty"] == 1
+    assert trade["exit"] == pytest.approx(110 * (1 - 0.05))

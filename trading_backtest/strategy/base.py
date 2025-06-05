@@ -36,6 +36,7 @@ class BaseStrategy(ABC):
             if (not in_pos) and entries.at[i]:
                 in_pos = True
                 e_price = row["close"]
+                qty = getattr(self, "position_size", 1)
                 sl_price = e_price * (1 - self.sl_pct / 100)
                 tp_price = e_price * (1 + self.tp_pct / 100)
                 if self.trailing_stop_pct:
@@ -60,6 +61,7 @@ class BaseStrategy(ABC):
                             "entry": e_price,
                             "exit": x_price,
                             "pct_change": (x_price / e_price - 1) * 100,
+                            "qty": qty,
                         }
                     )
                     in_pos = False
@@ -81,6 +83,7 @@ class BaseStrategy(ABC):
                     "entry": e_price,
                     "exit": df.iloc[-1]["close"],
                     "pct_change": (df.iloc[-1]["close"] / e_price - 1) * 100,
+                    "qty": qty,
                 }
             )
         return pd.DataFrame(trades)
