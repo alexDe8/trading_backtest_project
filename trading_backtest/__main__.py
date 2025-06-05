@@ -16,11 +16,12 @@ from .strategy.sma import SMACrossoverStrategy
 from .strategy.rsi import RSIStrategy
 from .strategy.breakout import BreakoutStrategy
 from .strategy.bollinger import BollingerBandStrategy
+
 from .strategy.momentum import MomentumImpulseStrategy, VolatilityExpansionStrategy
 
 
-def main() -> None:
-    # 1) Dati + indicatori -------------------------------------------------
+def load_data() -> pd.DataFrame:
+    """Load price data and precompute indicators."""
     df = load_price_data(DATA_FILE)
     add_indicator_cache(
         df,
@@ -30,7 +31,11 @@ def main() -> None:
         vol=[20, 50],
         imp=[5, 10],
     )
-    # 2) Optuna (modulare!) ------------------------------------------------
+    return df
+
+
+def optimize_sma(df: pd.DataFrame) -> pd.DataFrame:
+    """Run SMA optimization and save the resulting grid."""
     best_trial = optimize_with_optuna(
         df,
         SMACrossoverStrategy,
@@ -42,8 +47,11 @@ def main() -> None:
     grid_df = grid_search(df, sma_grid)
     grid_df.to_csv(RESULTS_FILE, index=False)
     log.info("Grid SMA salvato in %s", RESULTS_FILE)
+    return grid_df
 
-    # 3) Strategie di riferimento ------------------------------------------
+
+def evaluate_reference_strategies(df: pd.DataFrame) -> pd.DataFrame:
+    """Evaluate additional strategies for comparison."""
     other = []
     other.append(
         {
@@ -90,6 +98,13 @@ def main() -> None:
     summary = pd.DataFrame(other).sort_values("total_return", ascending=False)
     summary.to_csv(SUMMARY_FILE, index=False)
     log.info("Riepilogo strategie salvato in %s", SUMMARY_FILE)
+    return summary
+
+
+def main() -> None:
+    df = load_data()
+    optimize_sma(df)
+    summary = evaluate_reference_strategies(df)
     log.info("=== PERFORMANCE ===\n%s", summary.to_string(index=False))
 
 
