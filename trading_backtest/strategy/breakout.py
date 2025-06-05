@@ -15,7 +15,14 @@ class BreakoutStrategy(BaseStrategy):
         if h_col not in df:
             df[h_col] = df["close"].shift(1).rolling(self.config.lookback).max()
         df["h"] = df[h_col]
-        df["atr"] = df[f"atr_{self.config.atr_period}"]
+        atr_col = f"atr_{self.config.atr_period}"
+        if atr_col not in df.columns:
+            raise KeyError(f"Colonna {atr_col} mancante")
+        if df[atr_col].isna().all():
+            print(f"[DEBUG] Colonna {atr_col} tutta NaN!")
+        else:
+            print(f"[DEBUG] Colonna {atr_col} OK. Stats:\n{df[atr_col].describe()}")
+        df["atr"] = df[atr_col]
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:

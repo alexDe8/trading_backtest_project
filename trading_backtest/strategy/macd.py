@@ -17,6 +17,9 @@ class MACDStrategy(BaseStrategy):
         df["signal"] = (
             df["macd"].ewm(span=self.config.signal, adjust=False).mean().shift(1)
         )
+        print(
+            f"[DEBUG] MACD fast={self.config.fast}, slow={self.config.slow}, signal={self.config.signal}"
+        )
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:

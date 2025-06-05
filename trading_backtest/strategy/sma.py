@@ -13,10 +13,28 @@ class SMACrossoverStrategy(BaseStrategy):
         self.config = config
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
-        df["f"] = df[f"sma_{self.config.sma_fast}"]
-        df["s"] = df[f"sma_{self.config.sma_slow}"]
+        fast_col = f"sma_{self.config.sma_fast}"
+        slow_col = f"sma_{self.config.sma_slow}"
+        for col in [fast_col, slow_col]:
+            if col not in df.columns:
+                raise KeyError(f"Colonna {col} mancante")
+            if df[col].isna().all():
+                print(f"[DEBUG] Colonna {col} tutta NaN!")
+            else:
+                print(f"[DEBUG] Colonna {col} OK. Stats:\n{df[col].describe()}")
+        df["f"] = df[fast_col]
+        df["s"] = df[slow_col]
         if self.config.sma_trend:
-            df["t"] = df[f"sma_{self.config.sma_trend}"]
+            trend_col = f"sma_{self.config.sma_trend}"
+            if trend_col not in df.columns:
+                raise KeyError(f"Colonna {trend_col} mancante")
+            if df[trend_col].isna().all():
+                print(f"[DEBUG] Colonna {trend_col} tutta NaN!")
+            else:
+                print(
+                    f"[DEBUG] Colonna {trend_col} OK. Stats:\n{df[trend_col].describe()}"
+                )
+            df["t"] = df[trend_col]
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:

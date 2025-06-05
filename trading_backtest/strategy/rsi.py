@@ -11,7 +11,14 @@ class RSIStrategy(BaseStrategy):
         self.config = config
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
-        df["r"] = df[f"rsi_{self.config.period}"]
+        col = f"rsi_{self.config.period}"
+        if col not in df.columns:
+            raise KeyError(f"Colonna {col} mancante")
+        if df[col].isna().all():
+            print(f"[DEBUG] Colonna {col} tutta NaN!")
+        else:
+            print(f"[DEBUG] Colonna {col} OK. Stats:\n{df[col].describe()}")
+        df["r"] = df[col]
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:
