@@ -30,8 +30,10 @@ class RandomForestStrategy(BaseStrategy):
             df["ret_1"] = df["close"].pct_change().fillna(0)
             feature_cols = ["ret_1"]
 
+        codex/replace-print-with-log.debug-in-strategy-modules
         X = df[feature_cols].fillna(method="bfill").fillna(method="ffill").fillna(0)
         log.debug(f"RandomForest feature cols: {feature_cols}")
+
         y = (df["close"].shift(-1) > df["close"]).astype(int)
 
         split = int(len(df) * 0.7)

@@ -66,7 +66,7 @@ def _dummy_df() -> pd.DataFrame:
         df[f"impulse_{i}"] = 0.1
     for i in range(20, 105, 5):
         df[f"vol_{i}"] = 0.5
-    return df.fillna(method="bfill").fillna(method="ffill")
+    return df.bfill().ffill()
 
 
 def test_generate_trades_runs():
