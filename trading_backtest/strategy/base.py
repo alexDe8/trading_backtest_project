@@ -52,6 +52,7 @@ class BaseStrategy(ABC):
 
     # ---------------- motore trades ----------------------
     def generate_trades(self, df: pd.DataFrame) -> pd.DataFrame:
+        print(f"[DEBUG] Config: {self.config}")
         df = self.prepare_indicators(df.copy())
         entries = self.entry_signal(df).fillna(False)
         exits = self.exit_signal(df).fillna(False)
@@ -95,7 +96,11 @@ class BaseStrategy(ABC):
                     qty=qty,
                 )
             )
-        return pd.DataFrame([t.as_dict() for t in trades])
+        trades_df = pd.DataFrame([t.as_dict() for t in trades])
+        print(f"[DEBUG] Numero trade generati: {len(trades_df)}")
+        if not trades_df.empty:
+            print(trades_df.head(3))
+        return trades_df
 
     # ---------------- metodi interni ----------------------
     def _open_trade(

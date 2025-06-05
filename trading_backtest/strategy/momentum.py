@@ -11,7 +11,14 @@ class VolatilityExpansionStrategy(BaseStrategy):
         self.config = config
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
-        df["v"] = df[f"vol_{self.config.vol_window}"]
+        col = f"vol_{self.config.vol_window}"
+        if col not in df.columns:
+            raise KeyError(f"Colonna {col} mancante")
+        if df[col].isna().all():
+            print(f"[DEBUG] Colonna {col} tutta NaN!")
+        else:
+            print(f"[DEBUG] Colonna {col} OK. Stats:\n{df[col].describe()}")
+        df["v"] = df[col]
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:
@@ -29,7 +36,14 @@ class MomentumImpulseStrategy(BaseStrategy):
         self.config = config
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
-        df["imp"] = df[f"impulse_{self.config.window}"]
+        col = f"impulse_{self.config.window}"
+        if col not in df.columns:
+            raise KeyError(f"Colonna {col} mancante")
+        if df[col].isna().all():
+            print(f"[DEBUG] Colonna {col} tutta NaN!")
+        else:
+            print(f"[DEBUG] Colonna {col} OK. Stats:\n{df[col].describe()}")
+        df["imp"] = df[col]
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:

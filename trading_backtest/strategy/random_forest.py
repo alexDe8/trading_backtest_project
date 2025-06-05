@@ -31,6 +31,7 @@ class RandomForestStrategy(BaseStrategy):
             feature_cols = ["ret_1"]
 
         X = df[feature_cols].fillna(method="bfill").fillna(method="ffill").fillna(0)
+        print(f"[DEBUG] RandomForest feature cols: {feature_cols}")
         y = (df["close"].shift(-1) > df["close"]).astype(int)
 
         split = int(len(df) * 0.7)
@@ -42,6 +43,9 @@ class RandomForestStrategy(BaseStrategy):
             df["rf_prob"] = prob_col
         else:
             df["rf_prob"] = 0.0
+        print(
+            f"[DEBUG] RF params n_estimators={self.config.n_estimators}, max_depth={self.config.max_depth}"
+        )
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:
