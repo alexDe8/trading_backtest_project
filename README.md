@@ -15,6 +15,21 @@ python run.py
 Alternatively, place the CSV file at the default location and simply run
 `python run.py`.
 
+A small synthetic dataset is provided in the `data/` directory for testing
+purposes. The CSV must include the following columns:
+
+| column     | description                            |
+|----------- |----------------------------------------|
+| `Open time`| timestamp of the 15 minute period       |
+| `Open`     | opening price                          |
+| `High`     | highest price within the period        |
+| `Low`      | lowest price within the period         |
+| `Close`    | closing price                          |
+| `Volume`   | traded volume                          |
+
+Column names need to match exactly; any extra columns are ignored. The loader
+converts `Open time` into a `timestamp` column internally.
+
 ## Setup
 
 Before running the project or the test suite make sure all dependencies are
