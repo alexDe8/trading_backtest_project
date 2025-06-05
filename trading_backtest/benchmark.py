@@ -35,7 +35,7 @@ from .optimize import (
 from .performance import PerformanceAnalyzer
 
 
-def benchmark_strategies(df: pd.DataFrame, n_trials: int = 20) -> pd.DataFrame:
+def benchmark_strategies(df: pd.DataFrame, n_trials: int = 50) -> pd.DataFrame:
     """Optimize each classical strategy then evaluate on ``df``.
 
     The resulting DataFrame is sorted by ``total_return``.
