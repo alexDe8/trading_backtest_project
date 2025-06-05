@@ -98,7 +98,7 @@ def main(with_ml: bool = False) -> None:
     parser.add_argument(
         "--trials",
         type=int,
-        default=int(os.getenv("TRIALS", 300)),
+        default=int(os.getenv("TRIALS", 50)),
         help="Number of Optuna trials (env TRIALS)",
     )
     parser.add_argument(
@@ -109,13 +109,13 @@ def main(with_ml: bool = False) -> None:
     )
     args = parser.parse_args()
 
+    n_trials = args.trials
     strategy_name = args.strategy or os.getenv("STRATEGY", "sma")
+
     if strategy_name not in STRATEGY_REGISTRY:
         raise SystemExit(f"Unknown strategy '{strategy_name}'")
 
     strategy_cls, config_cls, param_space, prune_func = STRATEGY_REGISTRY[strategy_name]
-
-    n_trials = args.trials
 
     # 1) Dati + indicatori -------------------------------------------------
     df = load_price_data(DATA_FILE)
@@ -131,7 +131,7 @@ def main(with_ml: bool = False) -> None:
         bb=periods.get("bb", []),
     )
 
-    # 2) Optuna (modulare!) ------------------------------------------------
+    # 2) Ottimizzazione singola o benchmark -------------------------------
     if not args.benchmark:
         best_trial = optimize_with_optuna(
             df,
@@ -142,11 +142,11 @@ def main(with_ml: bool = False) -> None:
             n_trials=n_trials,
         )
 
-    if not args.benchmark and strategy_name == "sma":
-        sma_grid = refined_sma_grid(best_trial.params)
-        grid_df = grid_search(df, sma_grid)
-        save_csv(grid_df, RESULTS_FILE)
-        log.info("Grid SMA salvato in %s", RESULTS_FILE)
+        if strategy_name == "sma":
+            sma_grid = refined_sma_grid(best_trial.params)
+            grid_df = grid_search(df, sma_grid)
+            save_csv(grid_df, RESULTS_FILE)
+            log.info("Grid SMA salvato in %s", RESULTS_FILE)
 
     # 3) Benchmark completo: classiche + ML -------------------------------
     if args.benchmark:
@@ -158,3 +158,4 @@ def main(with_ml: bool = False) -> None:
 if __name__ == "__main__":
     run_ml = os.getenv("RUN_ML", "0") == "1"
     main(with_ml=run_ml)
+
