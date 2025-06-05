@@ -8,13 +8,18 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 from trading_backtest.optimize import (
     optimize_with_optuna,
-    PARAM_SPACES,
     prune_sma,
     prune_rsi,
     prune_breakout,
     prune_bollinger,
     prune_momentum,
     prune_vol_expansion,
+    SMAParamSpace,
+    RSIParamSpace,
+    BreakoutParamSpace,
+    BollingerParamSpace,
+    MomentumParamSpace,
+    VolExpansionParamSpace,
 )
 from trading_backtest.strategy.sma import SMACrossoverStrategy
 from trading_backtest.strategy.rsi import RSIStrategy
@@ -76,25 +81,25 @@ def _dummy_df() -> pd.DataFrame:
 def test_optimize_instantiates_strategies():
     df = _dummy_df()
     configs = [
-        (SMACrossoverStrategy, SMAConfig, PARAM_SPACES["sma"], prune_sma),
-        (RSIStrategy, RSIConfig, PARAM_SPACES["rsi"], prune_rsi),
-        (BreakoutStrategy, BreakoutConfig, PARAM_SPACES["breakout"], prune_breakout),
+        (SMACrossoverStrategy, SMAConfig, SMAParamSpace(), prune_sma),
+        (RSIStrategy, RSIConfig, RSIParamSpace(), prune_rsi),
+        (BreakoutStrategy, BreakoutConfig, BreakoutParamSpace(), prune_breakout),
         (
             BollingerBandStrategy,
             BollingerConfig,
-            PARAM_SPACES["bollinger"],
+            BollingerParamSpace(),
             prune_bollinger,
         ),
         (
             MomentumImpulseStrategy,
             MomentumConfig,
-            PARAM_SPACES["momentum"],
+            MomentumParamSpace(),
             prune_momentum,
         ),
         (
             VolatilityExpansionStrategy,
             VolExpansionConfig,
-            PARAM_SPACES["vol_expansion"],
+            VolExpansionParamSpace(),
             prune_vol_expansion,
         ),
     ]
