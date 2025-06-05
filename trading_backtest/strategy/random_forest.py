@@ -14,7 +14,7 @@ class RandomForestStrategy(BaseStrategy):
         self.model = RandomForestClassifier(
             n_estimators=config.n_estimators,
             max_depth=getattr(config, "max_depth", None),
-            random_state=42
+            random_state=42,
         )
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -49,4 +49,3 @@ class RandomForestStrategy(BaseStrategy):
 
     def exit_signal(self, df: pd.DataFrame) -> pd.Series:
         return df["rf_prob"] < getattr(self.config, "exit_threshold", 0.45)
-

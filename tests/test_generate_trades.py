@@ -50,7 +50,10 @@ def _dummy_df() -> pd.DataFrame:
         ("momentum", MomentumConfig(...)),
         ("vol_expansion", VolExpansionConfig(...)),
         ("macd", MACDConfig(fast=12, slow=26, signal=9, sl_pct=1, tp_pct=2)),
-        ("stochastic", StochasticConfig(k_period=14, d_period=3, oversold=20, sl_pct=1, tp_pct=2)),
+        (
+            "stochastic",
+            StochasticConfig(k_period=14, d_period=3, oversold=20, sl_pct=1, tp_pct=2),
+        ),
     ],
 )
 def test_generate_trades_runs(name, cfg):
@@ -59,4 +62,3 @@ def test_generate_trades_runs(name, cfg):
     strat = strategy_cls(cfg)
     trades = strat.generate_trades(df)
     assert isinstance(trades, pd.DataFrame)
-
