@@ -7,17 +7,16 @@ class RSIStrategy(BaseStrategy):
     """Enter on RSI oversold crosses back above the threshold."""
 
     def __init__(self, config: RSIConfig):
-        super().__init__(config.sl_pct, config.tp_pct)
-        self.p, self.ov = config.period, config.oversold
+        super().__init__(config)
         self.config = config
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
-        df["r"] = df[f"rsi_{self.p}"]
+        df["r"] = df[f"rsi_{self.config.period}"]
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:
         r = df["r"]
-        return (r.shift(1) <= self.ov) & (r > self.ov)
+        return (r.shift(1) <= self.config.oversold) & (r > self.config.oversold)
 
     def exit_signal(self, df: pd.DataFrame) -> pd.Series:
         r = df["r"]
