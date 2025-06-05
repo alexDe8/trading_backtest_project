@@ -92,7 +92,6 @@ PARAM_SPACES = {
 }
 
 
-
 # ---------------------- SUGGEST UNIVERSALE ---------------------------
 def suggest(trial, param_info, name=None):
     """Wrapper around Optuna suggest functions with basic validation."""
