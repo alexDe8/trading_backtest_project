@@ -70,3 +70,13 @@ class VolExpansionConfig:
     vol_threshold: float
     sl_pct: float
     tp_pct: float
+
+
+@dataclass
+class RandomForestConfig:
+    """Configuration for the machine learning strategy."""
+
+    n_estimators: int
+    max_depth: Optional[int]
+    sl_pct: float
+    tp_pct: float

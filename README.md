@@ -66,3 +66,14 @@ trades = strat.generate_trades(df)
 
 For strategies without the `position_size` parameter, `qty` defaults to `1`.
 
+## Benchmark output
+
+Running `python run.py` generates a `summary_live.csv` file with the total return
+for each strategy. A simplified example of the table is shown below:
+
+| strategy      | total_return |
+|---------------|-------------:|
+| SMA           | 120.5        |
+| Bollinger     | 80.1         |
+| RandomForest  | 50.0         |
+

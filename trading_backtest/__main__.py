@@ -7,11 +7,6 @@ from .config import (
     DATA_FILE,
     log,
     SMAConfig,
-    RSIConfig,
-    BreakoutConfig,
-    BollingerConfig,
-    MomentumConfig,
-    VolExpansionConfig,
 )
 from .data import load_price_data, add_indicator_cache
 from .utils.io_utils import save_csv
@@ -22,65 +17,8 @@ from .optimize import (
     refined_sma_grid,
     grid_search,
 )
-from .performance import PerformanceAnalyzer
-
+from .benchmark import benchmark_strategies
 from .strategy.sma import SMACrossoverStrategy
-from .strategy.rsi import RSIStrategy
-from .strategy.breakout import BreakoutStrategy
-from .strategy.bollinger import BollingerBandStrategy
-from .strategy.momentum import MomentumImpulseStrategy, VolatilityExpansionStrategy
-
-
-def create_reference_strategies(df: pd.DataFrame):
-    """Return list of (name, strategy_instance) tuples."""
-    vol_thr = df["vol_50"].quantile(0.80)
-    return [
-        (
-            "RSI",
-            RSIStrategy(RSIConfig(period=14, oversold=30, sl_pct=7, tp_pct=20)),
-        ),
-        (
-            "Breakout",
-            BreakoutStrategy(
-                BreakoutConfig(
-                    lookback=55,
-                    atr_period=14,
-                    atr_mult=1.0,
-                    sl_pct=7,
-                    tp_pct=20,
-                )
-            ),
-        ),
-        (
-            "VolExpansion",
-            VolatilityExpansionStrategy(
-                VolExpansionConfig(
-                    vol_window=50,
-                    vol_threshold=vol_thr,
-                    sl_pct=7,
-                    tp_pct=20,
-                )
-            ),
-        ),
-        (
-            "Bollinger",
-            BollingerBandStrategy(
-                BollingerConfig(period=20, nstd=2.0, sl_pct=7, tp_pct=15)
-            ),
-        ),
-        (
-            "Momentum",
-            MomentumImpulseStrategy(
-                MomentumConfig(window=10, threshold=0.02, sl_pct=7, tp_pct=20)
-            ),
-        ),
-    ]
-
-
-def run_reference_strategy(df: pd.DataFrame, strategy_instance) -> float:
-    """Return total return for a given strategy instance."""
-    trades = strategy_instance.generate_trades(df)
-    return PerformanceAnalyzer(trades).total_return()
 
 
 def main() -> None:
@@ -108,18 +46,8 @@ def main() -> None:
     save_csv(grid_df, RESULTS_FILE)
     log.info("Grid SMA salvato in %s", RESULTS_FILE)
 
-    # 3) Strategie di riferimento ------------------------------------------
-    ref_strategies = create_reference_strategies(df)
-    other = [
-        {
-            "strategy": name,
-            "total_return": run_reference_strategy(df, strat),
-        }
-        for name, strat in ref_strategies
-    ]
-
-    summary = pd.DataFrame(other).sort_values("total_return", ascending=False)
-    save_csv(summary, SUMMARY_FILE)
+    # 3) Benchmark completo -----------------------------------------------
+    summary = benchmark_strategies(df, n_trials=50)
     log.info("Riepilogo strategie salvato in %s", SUMMARY_FILE)
     log.info("=== PERFORMANCE ===\n%s", summary.to_string(index=False))
 
