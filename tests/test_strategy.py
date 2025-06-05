@@ -33,4 +33,3 @@ def test_rsi_strategy_invalid_sl_tp():
     cfg = RSIConfig(period=14, oversold=30, sl_pct=10, tp_pct=5)
     with pytest.raises(ValueError):
         RSIStrategy(cfg)
-
