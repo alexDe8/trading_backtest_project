@@ -95,7 +95,15 @@ def main(with_ml: bool = False) -> None:
         choices=list(STRATEGY_REGISTRY.keys()),
         help="Strategy name to optimize (overrides STRATEGY env var)",
     )
+    parser.add_argument(
+        "--n-trials",
+        type=int,
+        default=int(os.getenv("N_TRIALS", "50")),
+        help="Number of Optuna trials for each optimization",
+    )
     args = parser.parse_args()
+
+    n_trials = args.n_trials
 
     strategy_name = args.strategy or os.getenv("STRATEGY", "sma")
     if strategy_name not in STRATEGY_REGISTRY:
@@ -124,7 +132,7 @@ def main(with_ml: bool = False) -> None:
         config_cls,
         param_space,
         prune_logic=prune_func,
-        n_trials=300,
+        n_trials=n_trials,
     )
 
     if strategy_name == "sma":
@@ -134,7 +142,7 @@ def main(with_ml: bool = False) -> None:
         log.info("Grid SMA salvato in %s", RESULTS_FILE)
 
     # 3) Benchmark completo: classiche + ML -------------------------------
-    summary = benchmark_strategies(df, n_trials=25, with_ml=with_ml)
+    summary = benchmark_strategies(df, n_trials=n_trials, with_ml=with_ml)
     log.info("Riepilogo strategie salvato in %s", SUMMARY_FILE)
     log.info("=== PERFORMANCE ===\n%s", summary.to_string(index=False))
 

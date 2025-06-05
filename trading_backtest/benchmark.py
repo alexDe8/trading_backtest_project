@@ -40,7 +40,21 @@ def benchmark_strategies(
 ) -> pd.DataFrame:
     """Optimize each classical strategy then evaluate on ``df``.
 
-    The resulting DataFrame is sorted by ``total_return``.
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Price data used for generating trades.
+    n_trials : int, default 50
+        Number of Optuna trials used for each strategy.  The caller should
+        explicitly pass this value so all optimizations share the same trial
+        count.
+    with_ml : bool, default True
+        Whether to include the machine learning strategy in the benchmark.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Summary of strategy performance sorted by ``total_return``.
     """
 
     configs = [
