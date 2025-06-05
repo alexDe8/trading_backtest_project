@@ -2,8 +2,8 @@ import os
 from pathlib import Path
 import logging
 
-# Usa variabile d'ambiente se disponibile, altrimenti fallback su path Codex
-DATA_FILE = Path(os.environ.get("DATA_FILE", "/content/btc_15m_data_2018_to_2025.csv"))
+# Usa variabile d'ambiente se disponibile, altrimenti path relativo al progetto
+DATA_FILE = Path(os.environ.get("DATA_FILE", "data/btc_15m_data_2018_to_2025.csv"))
 RESULTS_FILE = Path("results_live.csv")
 SUMMARY_FILE = Path("summary_live.csv")
 
