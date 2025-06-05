@@ -119,7 +119,26 @@ def main(with_ml: bool = False) -> None:
 
     # 1) Dati + indicatori -------------------------------------------------
     df = load_price_data(DATA_FILE)
-    periods = gather_indicator_periods(strategy_name)
+    if args.benchmark:
+        merged: dict[str, set[int]] = {
+            "sma": set(),
+            "rsi": set(),
+            "atr": set(),
+            "vol": set(),
+            "imp": set(),
+            "hmax": set(),
+            "bb": set(),
+        }
+        for name in STRATEGY_REGISTRY:
+            if name not in PARAM_SPACES:
+                continue
+            periods = gather_indicator_periods(name)
+            for k, vals in periods.items():
+                merged[k].update(vals)
+        periods = {k: sorted(v) for k, v in merged.items() if v}
+    else:
+        periods = gather_indicator_periods(strategy_name)
+
     add_indicator_cache(
         df,
         sma=periods.get("sma", []),
@@ -158,4 +177,3 @@ def main(with_ml: bool = False) -> None:
 if __name__ == "__main__":
     run_ml = os.getenv("RUN_ML", "0") == "1"
     main(with_ml=run_ml)
-
