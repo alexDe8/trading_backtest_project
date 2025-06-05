@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 from typing import Any, Callable
+from dataclasses import dataclass, fields
 import pandas as pd
 import optuna
 from tqdm import tqdm
@@ -14,6 +15,71 @@ from .config import (
     MomentumConfig,
     VolExpansionConfig,
 )
+
+
+@dataclass
+class ParamSpace:
+    """Base class for parameter ranges."""
+
+    def suggest(self, trial) -> dict[str, Any]:
+        params = {}
+        for f in fields(self):
+            info = getattr(self, f.name)
+            params[f.name] = suggest(trial, info, name=f.name)
+        return params
+
+
+@dataclass
+class SMAParamSpace(ParamSpace):
+    sma_fast: tuple = ("int", 5, 50, 5)
+    sma_slow: tuple = ("int", 100, 250, 5)
+    sma_trend: tuple = ("cat", [None, 200, 300, 400])
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 15, 25, 5)
+    position_size: tuple = ("float", 0.01, 0.2)
+    trailing_stop_pct: tuple = ("float", 0.5, 10.0)
+
+
+@dataclass
+class RSIParamSpace(ParamSpace):
+    period: tuple = ("int", 7, 21, 1)
+    oversold: tuple = ("int", 20, 40, 5)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
+@dataclass
+class BreakoutParamSpace(ParamSpace):
+    lookback: tuple = ("int", 20, 100, 5)
+    atr_period: tuple = ("int", 7, 21, 1)
+    atr_mult: tuple = ("float", 0.5, 2.0)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
+@dataclass
+class BollingerParamSpace(ParamSpace):
+    period: tuple = ("int", 10, 30, 2)
+    nstd: tuple = ("float", 1.5, 3.0, 0.1)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
+@dataclass
+class MomentumParamSpace(ParamSpace):
+    window: tuple = ("int", 5, 20, 1)
+    threshold: tuple = ("float", 0.01, 0.05, 0.01)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
+@dataclass
+class VolExpansionParamSpace(ParamSpace):
+    vol_window: tuple = ("int", 20, 100, 5)
+    vol_threshold: tuple = ("float", 0.6, 1.0, 0.05)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
 
 # ---------------------- PARAMETRI STRATEGIE --------------------------
 PARAM_SPACES = {
@@ -119,9 +185,13 @@ def make_objective(
     """Create an Optuna objective for the provided strategy class."""
 
     def objective(trial):
-        params = {
-            name: suggest(trial, info, name=name) for name, info in param_space.items()
-        }
+        if hasattr(param_space, "suggest"):
+            params = param_space.suggest(trial)
+        else:
+            params = {
+                name: suggest(trial, info, name=name)
+                for name, info in param_space.items()
+            }
         if prune_logic is not None:
             prune_logic(params, trial)
         config = config_cls(**params)
