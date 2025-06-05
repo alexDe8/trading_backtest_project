@@ -2,14 +2,7 @@ import pandas as pd
 import numpy as np
 import pytest
 
-from trading_backtest.strategy.sma import SMACrossoverStrategy
-from trading_backtest.strategy.rsi import RSIStrategy
-from trading_backtest.strategy.breakout import BreakoutStrategy
-from trading_backtest.strategy.bollinger import BollingerBandStrategy
-from trading_backtest.strategy.momentum import (
-    MomentumImpulseStrategy,
-    VolatilityExpansionStrategy,
-)
+from trading_backtest.strategy import get_strategy
 from trading_backtest.config import (
     SMAConfig,
     RSIConfig,
@@ -45,10 +38,10 @@ def _dummy_df() -> pd.DataFrame:
 
 
 @pytest.mark.parametrize(
-    "strategy_cls, cfg",
+    "name, cfg",
     [
         (
-            SMACrossoverStrategy,
+            "sma",
             SMAConfig(
                 sma_fast=5,
                 sma_slow=10,
@@ -59,34 +52,28 @@ def _dummy_df() -> pd.DataFrame:
                 trailing_stop_pct=1,
             ),
         ),
+        ("rsi", RSIConfig(period=14, oversold=30, sl_pct=1, tp_pct=2)),
         (
-            RSIStrategy,
-            RSIConfig(period=14, oversold=30, sl_pct=1, tp_pct=2),
-        ),
-        (
-            BreakoutStrategy,
+            "breakout",
             BreakoutConfig(
-                lookback=20, atr_period=14, atr_mult=1.0, sl_pct=1, tp_pct=2
+                lookback=20,
+                atr_period=14,
+                atr_mult=1.0,
+                sl_pct=1,
+                tp_pct=2,
             ),
         ),
+        ("bollinger", BollingerConfig(period=20, nstd=2.0, sl_pct=1, tp_pct=2)),
+        ("momentum", MomentumConfig(window=10, threshold=0, sl_pct=1, tp_pct=2)),
         (
-            BollingerBandStrategy,
-            BollingerConfig(period=20, nstd=2.0, sl_pct=1, tp_pct=2),
-        ),
-        (
-            MomentumImpulseStrategy,
-            MomentumConfig(window=10, threshold=0, sl_pct=1, tp_pct=2),
-        ),
-        (
-            VolatilityExpansionStrategy,
-            VolExpansionConfig(
-                vol_window=20, vol_threshold=0.4, sl_pct=1, tp_pct=2
-            ),
+            "vol_expansion",
+            VolExpansionConfig(vol_window=20, vol_threshold=0.4, sl_pct=1, tp_pct=2),
         ),
     ],
 )
-def test_generate_trades_runs(strategy_cls, cfg):
+def test_generate_trades_runs(name, cfg):
     df = _dummy_df()
+    strategy_cls, _ = get_strategy(name)
     strat = strategy_cls(cfg)
     trades = strat.generate_trades(df)
     assert isinstance(trades, pd.DataFrame)

@@ -48,7 +48,7 @@ accepts an additional `position_size` parameter used to size trades. The
 generated DataFrame now includes a `qty` column with this value:
 
 ```python
-from trading_backtest.strategy.sma import SMACrossoverStrategy
+from trading_backtest.strategy import get_strategy
 from trading_backtest.config import SMAConfig
 
 cfg = SMAConfig(
@@ -60,7 +60,8 @@ cfg = SMAConfig(
     position_size=0.1,
     trailing_stop_pct=2.0,
 )
-strat = SMACrossoverStrategy(cfg)
+strategy_cls, _ = get_strategy("sma")
+strat = strategy_cls(cfg)
 trades = strat.generate_trades(df)
 ```
 
