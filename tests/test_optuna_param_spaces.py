@@ -13,12 +13,16 @@ from trading_backtest.optimize import (
     prune_bollinger,
     prune_momentum,
     prune_vol_expansion,
+    prune_macd,
+    prune_stochastic,
     SMAParamSpace,
     RSIParamSpace,
     BreakoutParamSpace,
     BollingerParamSpace,
     MomentumParamSpace,
     VolExpansionParamSpace,
+    MACDParamSpace,
+    StochasticParamSpace,
     check_sl_tp,
 )
 from trading_backtest.strategy.sma import SMACrossoverStrategy
@@ -29,6 +33,8 @@ from trading_backtest.strategy.momentum import (
     MomentumImpulseStrategy,
     VolatilityExpansionStrategy,
 )
+from trading_backtest.strategy.macd import MACDStrategy
+from trading_backtest.strategy.stochastic import StochasticStrategy
 from trading_backtest.config import (
     SMAConfig,
     RSIConfig,
@@ -36,6 +42,8 @@ from trading_backtest.config import (
     BollingerConfig,
     MomentumConfig,
     VolExpansionConfig,
+    MACDConfig,
+    StochasticConfig,
 )
 
 
@@ -107,9 +115,15 @@ def test_generate_trades_runs():
         ),
         (
             VolatilityExpansionStrategy,
-            VolExpansionConfig(
-                vol_window=20, vol_threshold=0.4, sl_pct=1, tp_pct=2
-            ),
+            VolExpansionConfig(vol_window=20, vol_threshold=0.4, sl_pct=1, tp_pct=2),
+        ),
+        (
+            MACDStrategy,
+            MACDConfig(fast=12, slow=26, signal=9, sl_pct=1, tp_pct=2),
+        ),
+        (
+            StochasticStrategy,
+            StochasticConfig(k_period=14, d_period=3, oversold=20, sl_pct=1, tp_pct=2),
         ),
     ]
     df = _dummy_df()
@@ -117,6 +131,7 @@ def test_generate_trades_runs():
         strat = strategy_cls(cfg)
         trades = strat.generate_trades(df)
         assert isinstance(trades, pd.DataFrame)
+
 
 def test_optimize_instantiates_strategies():
     df = _dummy_df()
@@ -142,12 +157,19 @@ def test_optimize_instantiates_strategies():
             VolExpansionParamSpace(),
             prune_vol_expansion,
         ),
+        (MACDStrategy, MACDConfig, MACDParamSpace(), prune_macd),
+        (
+            StochasticStrategy,
+            StochasticConfig,
+            StochasticParamSpace(),
+            prune_stochastic,
+        ),
     ]
     for cls, cfg_cls, space, prune in configs:
         optimize_with_optuna(df, cls, cfg_cls, space, prune_logic=prune, n_trials=1)
+
 
 def test_check_sl_tp_pruning():
     check_sl_tp({"sl_pct": 5, "tp_pct": 10})
     with pytest.raises(optuna.TrialPruned):
         check_sl_tp({"sl_pct": 10, "tp_pct": 5})
-
