@@ -34,7 +34,7 @@ def test_trailing_stop_closes_trade():
     assert trade["qty"] == 1
     assert trade["exit"] == pytest.approx(110 * (1 - 0.05))
 
+
 def test_trailing_stop_pct_must_be_positive():
     with pytest.raises(ValueError):
         DummyStrategy(sl_pct=1, tp_pct=2, trailing_stop_pct=0)
-

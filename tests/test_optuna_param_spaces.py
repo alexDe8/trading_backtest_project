@@ -79,8 +79,18 @@ def test_optimize_instantiates_strategies():
         (SMACrossoverStrategy, SMAConfig, PARAM_SPACES["sma"], prune_sma),
         (RSIStrategy, RSIConfig, PARAM_SPACES["rsi"], prune_rsi),
         (BreakoutStrategy, BreakoutConfig, PARAM_SPACES["breakout"], prune_breakout),
-        (BollingerBandStrategy, BollingerConfig, PARAM_SPACES["bollinger"], prune_bollinger),
-        (MomentumImpulseStrategy, MomentumConfig, PARAM_SPACES["momentum"], prune_momentum),
+        (
+            BollingerBandStrategy,
+            BollingerConfig,
+            PARAM_SPACES["bollinger"],
+            prune_bollinger,
+        ),
+        (
+            MomentumImpulseStrategy,
+            MomentumConfig,
+            PARAM_SPACES["momentum"],
+            prune_momentum,
+        ),
         (
             VolatilityExpansionStrategy,
             VolExpansionConfig,
