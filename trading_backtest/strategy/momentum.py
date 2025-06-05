@@ -1,6 +1,6 @@
 import pandas as pd
 from .base import BaseStrategy
-from ..config import MomentumConfig, VolExpansionConfig
+from ..config import MomentumConfig, VolExpansionConfig, log
 
 
 class VolatilityExpansionStrategy(BaseStrategy):
@@ -15,9 +15,9 @@ class VolatilityExpansionStrategy(BaseStrategy):
         if col not in df.columns:
             raise KeyError(f"Colonna {col} mancante")
         if df[col].isna().all():
-            print(f"[DEBUG] Colonna {col} tutta NaN!")
+            log.debug(f"Colonna {col} tutta NaN!")
         else:
-            print(f"[DEBUG] Colonna {col} OK. Stats:\n{df[col].describe()}")
+            log.debug(f"Colonna {col} OK. Stats:\n{df[col].describe()}")
         df["v"] = df[col]
         return df
 
@@ -40,9 +40,9 @@ class MomentumImpulseStrategy(BaseStrategy):
         if col not in df.columns:
             raise KeyError(f"Colonna {col} mancante")
         if df[col].isna().all():
-            print(f"[DEBUG] Colonna {col} tutta NaN!")
+            log.debug(f"Colonna {col} tutta NaN!")
         else:
-            print(f"[DEBUG] Colonna {col} OK. Stats:\n{df[col].describe()}")
+            log.debug(f"Colonna {col} OK. Stats:\n{df[col].describe()}")
         df["imp"] = df[col]
         return df
 

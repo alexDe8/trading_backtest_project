@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 import pandas as pd
+from ..config import log
 
 
 @dataclass
@@ -52,7 +53,7 @@ class BaseStrategy(ABC):
 
     # ---------------- motore trades ----------------------
     def generate_trades(self, df: pd.DataFrame) -> pd.DataFrame:
-        print(f"[DEBUG] Config: {self.config}")
+        log.debug(f"Config: {self.config}")
         df = self.prepare_indicators(df.copy())
         entries = self.entry_signal(df).fillna(False)
         exits = self.exit_signal(df).fillna(False)
@@ -97,9 +98,9 @@ class BaseStrategy(ABC):
                 )
             )
         trades_df = pd.DataFrame([t.as_dict() for t in trades])
-        print(f"[DEBUG] Numero trade generati: {len(trades_df)}")
+        log.debug(f"Numero trade generati: {len(trades_df)}")
         if not trades_df.empty:
-            print(trades_df.head(3))
+            log.debug(trades_df.head(3))
         return trades_df
 
     # ---------------- metodi interni ----------------------

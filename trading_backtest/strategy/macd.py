@@ -1,6 +1,6 @@
 import pandas as pd
 from .base import BaseStrategy
-from ..config import MACDConfig
+from ..config import MACDConfig, log
 
 
 class MACDStrategy(BaseStrategy):
@@ -17,8 +17,8 @@ class MACDStrategy(BaseStrategy):
         df["signal"] = (
             df["macd"].ewm(span=self.config.signal, adjust=False).mean().shift(1)
         )
-        print(
-            f"[DEBUG] MACD fast={self.config.fast}, slow={self.config.slow}, signal={self.config.signal}"
+        log.debug(
+            f"MACD fast={self.config.fast}, slow={self.config.slow}, signal={self.config.signal}"
         )
         return df
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import pandas as pd
 from .base import BaseStrategy
-from ..config import SMAConfig
+from ..config import SMAConfig, log
 
 
 class SMACrossoverStrategy(BaseStrategy):
@@ -19,9 +19,9 @@ class SMACrossoverStrategy(BaseStrategy):
             if col not in df.columns:
                 raise KeyError(f"Colonna {col} mancante")
             if df[col].isna().all():
-                print(f"[DEBUG] Colonna {col} tutta NaN!")
+                log.debug(f"Colonna {col} tutta NaN!")
             else:
-                print(f"[DEBUG] Colonna {col} OK. Stats:\n{df[col].describe()}")
+                log.debug(f"Colonna {col} OK. Stats:\n{df[col].describe()}")
         df["f"] = df[fast_col]
         df["s"] = df[slow_col]
         if self.config.sma_trend:
@@ -29,11 +29,9 @@ class SMACrossoverStrategy(BaseStrategy):
             if trend_col not in df.columns:
                 raise KeyError(f"Colonna {trend_col} mancante")
             if df[trend_col].isna().all():
-                print(f"[DEBUG] Colonna {trend_col} tutta NaN!")
+                log.debug(f"Colonna {trend_col} tutta NaN!")
             else:
-                print(
-                    f"[DEBUG] Colonna {trend_col} OK. Stats:\n{df[trend_col].describe()}"
-                )
+                log.debug(f"Colonna {trend_col} OK. Stats:\n{df[trend_col].describe()}")
             df["t"] = df[trend_col]
         return df
 

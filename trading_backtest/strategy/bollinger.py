@@ -1,6 +1,6 @@
 import pandas as pd
 from .base import BaseStrategy
-from ..config import BollingerConfig
+from ..config import BollingerConfig, log
 
 
 class BollingerBandStrategy(BaseStrategy):
@@ -17,9 +17,9 @@ class BollingerBandStrategy(BaseStrategy):
             df[ma] = df["close"].rolling(self.config.period).mean().shift(1)
             df[sd] = df["close"].rolling(self.config.period).std().shift(1)
         if df[ma].isna().all() or df[sd].isna().all():
-            print(f"[DEBUG] Colonne {ma}/{sd} contengono solo NaN!")
+            log.debug(f"Colonne {ma}/{sd} contengono solo NaN!")
         else:
-            print(f"[DEBUG] Bollinger {ma} OK. Stats:\n{df[ma].describe()}")
+            log.debug(f"Bollinger {ma} OK. Stats:\n{df[ma].describe()}")
         df["ma"] = df[ma]
         df["lb"] = df[ma] - self.config.nstd * df[sd]
         return df

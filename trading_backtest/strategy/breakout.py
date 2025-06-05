@@ -1,6 +1,6 @@
 import pandas as pd
 from .base import BaseStrategy
-from ..config import BreakoutConfig
+from ..config import BreakoutConfig, log
 
 
 class BreakoutStrategy(BaseStrategy):
@@ -19,9 +19,9 @@ class BreakoutStrategy(BaseStrategy):
         if atr_col not in df.columns:
             raise KeyError(f"Colonna {atr_col} mancante")
         if df[atr_col].isna().all():
-            print(f"[DEBUG] Colonna {atr_col} tutta NaN!")
+            log.debug(f"Colonna {atr_col} tutta NaN!")
         else:
-            print(f"[DEBUG] Colonna {atr_col} OK. Stats:\n{df[atr_col].describe()}")
+            log.debug(f"Colonna {atr_col} OK. Stats:\n{df[atr_col].describe()}")
         df["atr"] = df[atr_col]
         return df
 
