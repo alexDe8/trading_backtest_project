@@ -17,47 +17,14 @@ from .config import (
 
 # ---------------------- PARAMETRI STRATEGIE --------------------------
 PARAM_SPACES = {
-    "sma": {
-        "sma_fast": ("int", 5, 50, 5),
-        "sma_slow": ("int", 100, 250, 5),
-        "sma_trend": ("cat", [None, 200, 300, 400]),
-        "sl_pct": ("int", 5, 10),
-        "tp_pct": ("int", 15, 25, 5),
-        "position_size": ("float", 0.01, 0.2),
-        "trailing_stop_pct": ("float", 0.5, 10.0),
-    },
-    "rsi": {
-        "period": ("int", 7, 21, 1),
-        "oversold": ("int", 20, 40, 5),
-        "sl_pct": ("int", 5, 10),
-        "tp_pct": ("int", 10, 25, 5),
-    },
-    "breakout": {
-        "lookback": ("int", 20, 100, 5),
-        "atr_period": ("int", 7, 21, 1),
-        "atr_mult": ("float", 0.5, 2.0),
-        "sl_pct": ("int", 5, 10),
-        "tp_pct": ("int", 10, 25, 5),
-    },
-    "bollinger": {
-        "period": ("int", 10, 30, 2),
-        "nstd": ("float", 1.5, 3.0, 0.1),
-        "sl_pct": ("int", 5, 10),
-        "tp_pct": ("int", 10, 25, 5),
-    },
-    "momentum": {
-        "window": ("int", 5, 20, 1),
-        "threshold": ("float", 0.01, 0.05, 0.01),
-        "sl_pct": ("int", 5, 10),
-        "tp_pct": ("int", 10, 25, 5),
-    },
-    "vol_expansion": {
-        "vol_window": ("int", 20, 100, 5),
-        "vol_threshold": ("float", 0.6, 1.0, 0.05),
-        "sl_pct": ("int", 5, 10),
-        "tp_pct": ("int", 10, 25, 5),
-    },
+    "sma": SMAParamSpace(),
+    "rsi": RSIParamSpace(),
+    "breakout": BreakoutParamSpace(),
+    "bollinger": BollingerParamSpace(),
+    "momentum": MomentumParamSpace(),
+    "vol_expansion": VolExpansionParamSpace(),
 }
+
 
 
 # ---------------------- SUGGEST UNIVERSALE ---------------------------
