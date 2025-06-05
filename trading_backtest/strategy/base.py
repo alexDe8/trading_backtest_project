@@ -5,8 +5,11 @@ from dataclasses import dataclass
 from typing import Any
 import pandas as pd
 
+
 @dataclass
 class Trade:
+    """Simple representation of a single trade."""
+
     entry_time: Any
     exit_time: Any
     entry: float
@@ -22,6 +25,7 @@ class Trade:
             "pct_change": (self.exit / self.entry - 1) * 100,
             "qty": self.qty,
         }
+
 
 class BaseStrategy(ABC):
     """Scheletro comune per strategie long-only."""
@@ -59,7 +63,9 @@ class BaseStrategy(ABC):
         for i, row in df.iterrows():
             if (not in_pos) and entries.at[i]:
                 in_pos = True
-                e_price, sl_price, tp_price, trailing_sl, e_time, qty = self._open_trade(row)
+                e_price, sl_price, tp_price, trailing_sl, e_time, qty = (
+                    self._open_trade(row)
+                )
                 continue
 
             if in_pos:
@@ -137,4 +143,3 @@ class BaseStrategy(ABC):
             exit=x_price,
             qty=qty,
         )
-

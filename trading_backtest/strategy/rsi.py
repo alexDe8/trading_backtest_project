@@ -4,6 +4,8 @@ from ..config import RSIConfig
 
 
 class RSIStrategy(BaseStrategy):
+    """Enter on RSI oversold crosses back above the threshold."""
+
     def __init__(self, config: RSIConfig):
         super().__init__(config.sl_pct, config.tp_pct)
         self.p, self.ov = config.period, config.oversold

@@ -62,6 +62,8 @@ PARAM_SPACES = {
 
 # ---------------------- SUGGEST UNIVERSALE ---------------------------
 def suggest(trial, param_info, name=None):
+    """Wrapper around Optuna suggest functions with basic validation."""
+
     t, *args = param_info
     if name is None:
         raise ValueError("Parametro 'name' mancante in suggest()!")
@@ -92,6 +94,7 @@ def suggest(trial, param_info, name=None):
 
 # ---------------------- PRUNE -----------------------------
 def prune_sma(params, trial):
+    """Prune trials where SMA parameters are inconsistent."""
     if params["sma_fast"] >= params["sma_slow"]:
         raise optuna.TrialPruned()
     if params["sl_pct"] >= params["tp_pct"]:
@@ -99,32 +102,39 @@ def prune_sma(params, trial):
 
 
 def prune_rsi(params, trial):
+    """Prune RSI trials with invalid stop or take-profit."""
     if params["sl_pct"] >= params["tp_pct"]:
         raise optuna.TrialPruned()
 
 
 def prune_breakout(params, trial):
+    """Prune breakout trials with invalid stop or take-profit."""
     if params["sl_pct"] >= params["tp_pct"]:
         raise optuna.TrialPruned()
 
 
 def prune_bollinger(params, trial):
+    """Prune Bollinger trials with invalid stop or take-profit."""
     if params["sl_pct"] >= params["tp_pct"]:
         raise optuna.TrialPruned()
 
 
 def prune_momentum(params, trial):
+    """Prune momentum trials with invalid stop or take-profit."""
     if params["sl_pct"] >= params["tp_pct"]:
         raise optuna.TrialPruned()
 
 
 def prune_vol_expansion(params, trial):
+    """Prune volatility expansion trials with invalid stop or take-profit."""
     if params["sl_pct"] >= params["tp_pct"]:
         raise optuna.TrialPruned()
 
 
 # ---------------------- STRATEGY EVALUATION -----------------------------
 def evaluate_strategy(df: pd.DataFrame, make_strategy: Callable[[], Any]) -> float:
+    """Return the total strategy return for the given dataframe."""
+
     strat = make_strategy()
     trades = strat.generate_trades(df)
     return PerformanceAnalyzer(trades, commission=0.1, slippage=0.05).total_return()
@@ -138,6 +148,8 @@ def make_objective(
     param_space,
     prune_logic=None,
 ):
+    """Create an Optuna objective for the provided strategy class."""
+
     def objective(trial):
         params = {
             name: suggest(trial, info, name=name) for name, info in param_space.items()
@@ -159,6 +171,7 @@ def optimize_with_optuna(
     prune_logic=None,
     n_trials: int = 300,
 ) -> optuna.FrozenTrial:
+    """Run Optuna optimization and return the best trial."""
     study = optuna.create_study(direction="maximize")
     objective = make_objective(df, strategy_cls, config_cls, param_space, prune_logic)
     study.optimize(objective, n_trials=n_trials, show_progress_bar=True)
@@ -177,6 +190,7 @@ from .strategy.sma import SMACrossoverStrategy
 
 
 def optimize_sma(df: pd.DataFrame, n_trials: int = 300):
+    """Backward-compatible wrapper to optimize the SMA strategy."""
     return optimize_with_optuna(
         df,
         SMACrossoverStrategy,
@@ -192,10 +206,13 @@ from itertools import product
 
 
 def _around(val: int, step: int, n: int = 2) -> list[int]:
+    """Helper to build a symmetric range around ``val``."""
+
     return [val + i * step for i in range(-n, n + 1) if val + i * step > 0]
 
 
 def refined_sma_grid(best: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return a small grid of parameters around ``best`` for fine search."""
     grid = []
     for f, s, sl, tp in product(
         _around(best["sma_fast"], 2),
@@ -221,6 +238,8 @@ def refined_sma_grid(best: dict[str, Any]) -> list[dict[str, Any]]:
 
 # ---------------------- GRID SEARCH ---------------------------
 def grid_search(df: pd.DataFrame, combos: list[dict[str, Any]]) -> pd.DataFrame:
+    """Evaluate all SMA parameter combinations and rank the results."""
+
     log.info("Grid SMA – %d combo", len(combos))
     results = []
     for p in tqdm(combos, desc="SMA"):

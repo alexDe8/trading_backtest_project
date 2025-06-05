@@ -5,6 +5,8 @@ from ..config import SMAConfig
 
 
 class SMACrossoverStrategy(BaseStrategy):
+    """Classic fast/slow moving average crossover strategy."""
+
     def __init__(self, config: SMAConfig) -> None:
         super().__init__(config.sl_pct, config.tp_pct, config.trailing_stop_pct)
         self.f, self.s, self.tr = config.sma_fast, config.sma_slow, config.sma_trend

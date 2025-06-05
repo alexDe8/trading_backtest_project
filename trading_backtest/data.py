@@ -57,6 +57,13 @@ def add_indicator_cache(
     vol: list[int],
     imp: list[int],
 ) -> None:
+    """Compute and store commonly used indicators in ``df``.
+
+    Parameters mirror the window lengths for simple moving averages, RSI,
+    average true range, historical volatility and impulse.
+    The new columns are added in place and shifted so signals use past data.
+    """
+
     log.info("Caching indicatori …")
 
     # SMA

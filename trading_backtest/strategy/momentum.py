@@ -4,6 +4,8 @@ from ..config import MomentumConfig, VolExpansionConfig
 
 
 class VolatilityExpansionStrategy(BaseStrategy):
+    """Trade when volatility expands beyond a threshold."""
+
     def __init__(self, config: VolExpansionConfig):
         super().__init__(config.sl_pct, config.tp_pct)
         self.w, self.th = config.vol_window, config.vol_threshold
@@ -21,6 +23,8 @@ class VolatilityExpansionStrategy(BaseStrategy):
 
 
 class MomentumImpulseStrategy(BaseStrategy):
+    """Follow short-term price momentum using impulse."""
+
     def __init__(self, config: MomentumConfig):
         super().__init__(config.sl_pct, config.tp_pct)
         self.w, self.t = config.window, config.threshold
