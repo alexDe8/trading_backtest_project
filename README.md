@@ -67,3 +67,16 @@ trades = strat.generate_trades(df)
 
 For strategies without the `position_size` parameter, `qty` defaults to `1`.
 
+## Command line option
+
+The main entry point supports selecting which strategy to optimize. Use
+`--strategy` or set the `STRATEGY` environment variable. Available values are
+`sma`, `rsi`, `breakout`, `bollinger`, `momentum` and `vol_expansion`. When the
+option is omitted, `sma` is used by default:
+
+```bash
+python run.py --strategy rsi
+# or via environment variable
+STRATEGY=breakout python run.py
+```
+
