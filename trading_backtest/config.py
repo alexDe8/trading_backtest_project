@@ -91,9 +91,12 @@ class StochasticConfig:
 
 @dataclass
 class RandomForestConfig:
-    entry_threshold: float
-    exit_threshold: float
-    sl_pct: float
-    tp_pct: float
+    # Se vuoi threshold di ingresso/uscita
+    entry_threshold: float = 0.55
+    exit_threshold: float = 0.45
+    # Parametri base random forest
     n_estimators: int = 100
+    max_depth: Optional[int] = None
+    sl_pct: float = 5
+    tp_pct: float = 10
 

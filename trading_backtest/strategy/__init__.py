@@ -1,4 +1,11 @@
-from __future__ import annotations
+from .sma import SMACrossoverStrategy
+from .rsi import RSIStrategy
+from .breakout import BreakoutStrategy
+from .bollinger import BollingerBandStrategy
+from .momentum import MomentumImpulseStrategy, VolatilityExpansionStrategy
+from .macd import MACDStrategy
+from .stochastic import StochasticStrategy
+from .random_forest import RandomForestStrategy
 
 from ..config import (
     SMAConfig,
@@ -11,15 +18,6 @@ from ..config import (
     StochasticConfig,
     RandomForestConfig,
 )
-
-from .sma import SMACrossoverStrategy
-from .rsi import RSIStrategy
-from .breakout import BreakoutStrategy
-from .bollinger import BollingerBandStrategy
-from .momentum import MomentumImpulseStrategy, VolatilityExpansionStrategy
-from .macd import MACDStrategy
-from .stochastic import StochasticStrategy
-from .random_forest import RandomForestStrategy
 
 STRATEGY_REGISTRY: dict[str, tuple[type, type]] = {}
 
@@ -55,4 +53,3 @@ __all__ = [
     "register_strategy",
     "get_strategy",
 ]
-

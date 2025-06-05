@@ -31,6 +31,7 @@ from .optimize import (
     grid_search,
 )
 from .performance import PerformanceAnalyzer
+from .benchmark import benchmark_strategies
 
 from .strategy.sma import SMACrossoverStrategy
 from .strategy.rsi import RSIStrategy
@@ -39,7 +40,7 @@ from .strategy.bollinger import BollingerBandStrategy
 from .strategy.momentum import MomentumImpulseStrategy, VolatilityExpansionStrategy
 from .strategy.random_forest import RandomForestStrategy
 
-# STRATEGY_REGISTRY dinamico (per CLI)
+# Registry dinamico per CLI
 STRATEGY_REGISTRY = {
     "sma": (
         SMACrossoverStrategy,
@@ -80,75 +81,10 @@ STRATEGY_REGISTRY = {
     "random_forest": (
         RandomForestStrategy,
         RandomForestConfig,
-        PARAM_SPACES.get("random_forest", {}),  # Se hai il param space anche per RF
-        lambda params: None,  # Prune function dummy o la tua logica ML
+        PARAM_SPACES.get("random_forest", {}),
+        lambda params: None,  # Prune function dummy per ML, aggiorna se ne hai una
     ),
 }
-
-def create_reference_strategies(df: pd.DataFrame, include_ml: bool = False):
-    """Return list of (name, strategy_instance) tuples."""
-    vol_thr = df["vol_50"].quantile(0.80)
-    strategies = [
-        (
-            "RSI",
-            RSIStrategy(RSIConfig(period=14, oversold=30, sl_pct=7, tp_pct=20)),
-        ),
-        (
-            "Breakout",
-            BreakoutStrategy(
-                BreakoutConfig(
-                    lookback=55,
-                    atr_period=14,
-                    atr_mult=1.0,
-                    sl_pct=7,
-                    tp_pct=20,
-                )
-            ),
-        ),
-        (
-            "VolExpansion",
-            VolatilityExpansionStrategy(
-                VolExpansionConfig(
-                    vol_window=50,
-                    vol_threshold=vol_thr,
-                    sl_pct=7,
-                    tp_pct=20,
-                )
-            ),
-        ),
-        (
-            "Bollinger",
-            BollingerBandStrategy(
-                BollingerConfig(period=20, nstd=2.0, sl_pct=7, tp_pct=15)
-            ),
-        ),
-        (
-            "Momentum",
-            MomentumImpulseStrategy(
-                MomentumConfig(window=10, threshold=0.02, sl_pct=7, tp_pct=20)
-            ),
-        ),
-    ]
-    if include_ml:
-        strategies.append(
-            (
-                "RandomForest",
-                RandomForestStrategy(
-                    RandomForestConfig(
-                        entry_threshold=0.55,
-                        exit_threshold=0.45,
-                        sl_pct=7,
-                        tp_pct=20,
-                    )
-                ),
-            )
-        )
-    return strategies
-
-def run_reference_strategy(df: pd.DataFrame, strategy_instance) -> float:
-    """Return total return for a given strategy instance."""
-    trades = strategy_instance.generate_trades(df)
-    return PerformanceAnalyzer(trades).total_return()
 
 def main(with_ml: bool = False) -> None:
     parser = argparse.ArgumentParser(description="Run trading backtest")
@@ -175,6 +111,7 @@ def main(with_ml: bool = False) -> None:
         vol=[20, 50],
         imp=[5, 10],
     )
+
     # 2) Optuna (modulare!) ------------------------------------------------
     best_trial = optimize_with_optuna(
         df,
@@ -184,28 +121,19 @@ def main(with_ml: bool = False) -> None:
         prune_logic=prune_func,
         n_trials=300,
     )
+
     if strategy_name == "sma":
         sma_grid = refined_sma_grid(best_trial.params)
         grid_df = grid_search(df, sma_grid)
         save_csv(grid_df, RESULTS_FILE)
         log.info("Grid SMA salvato in %s", RESULTS_FILE)
 
-    # 3) Strategie di riferimento ------------------------------------------
-    ref_strategies = create_reference_strategies(df, include_ml=with_ml)
-    other = [
-        {
-            "strategy": name,
-            "total_return": run_reference_strategy(df, strat),
-        }
-        for name, strat in ref_strategies
-    ]
-
-    summary = pd.DataFrame(other).sort_values("total_return", ascending=False)
-    save_csv(summary, SUMMARY_FILE)
+    # 3) Benchmark completo: classiche + ML -------------------------------
+    summary = benchmark_strategies(df, n_trials=50)
     log.info("Riepilogo strategie salvato in %s", SUMMARY_FILE)
     log.info("=== PERFORMANCE ===\n%s", summary.to_string(index=False))
-
 
 if __name__ == "__main__":
     run_ml = os.getenv("RUN_ML", "0") == "1"
     main(with_ml=run_ml)
+
