@@ -45,9 +45,28 @@ def test_add_indicator_cache_small_df():
     # Impulse
     expected[f"impulse_{w}"] = expected["close"].pct_change(w).shift(1)
 
-    add_indicator_cache(df, sma=[2], rsi=[2], atr=[2], vol=[2], imp=[2])
+    # Breakout high max
+    expected[f"hmax_{w}"] = expected["close"].shift(1).rolling(w).max()
 
-    for col in ["sma_2", "rsi_2", "tr", "atr_2", "vol_2", "impulse_2"]:
+    # Bollinger bands
+    expected[f"bbm_{w}"] = expected["close"].rolling(w).mean().shift(1)
+    expected[f"bbs_{w}"] = expected["close"].rolling(w).std().shift(1)
+
+    add_indicator_cache(
+        df, sma=[2], rsi=[2], atr=[2], vol=[2], imp=[2], hmax=[2], bb=[2]
+    )
+
+    for col in [
+        "sma_2",
+        "rsi_2",
+        "tr",
+        "atr_2",
+        "vol_2",
+        "impulse_2",
+        "hmax_2",
+        "bbm_2",
+        "bbs_2",
+    ]:
         assert col in df.columns
 
     pdt.assert_series_equal(df["sma_2"], expected["sma_2"])
@@ -56,3 +75,6 @@ def test_add_indicator_cache_small_df():
     pdt.assert_series_equal(df["atr_2"], expected["atr_2"])
     pdt.assert_series_equal(df["vol_2"], expected["vol_2"])
     pdt.assert_series_equal(df["impulse_2"], expected["impulse_2"])
+    pdt.assert_series_equal(df["hmax_2"], expected["hmax_2"])
+    pdt.assert_series_equal(df["bbm_2"], expected["bbm_2"])
+    pdt.assert_series_equal(df["bbs_2"], expected["bbs_2"])

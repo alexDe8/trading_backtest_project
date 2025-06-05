@@ -51,50 +51,78 @@ def load_price_data(data_file: Path = DATA_FILE) -> pd.DataFrame:
 
 def add_indicator_cache(
     df: pd.DataFrame,
-    sma: list[int],
-    rsi: list[int],
-    atr: list[int],
-    vol: list[int],
-    imp: list[int],
+    sma: list[int] | None = None,
+    rsi: list[int] | None = None,
+    atr: list[int] | None = None,
+    vol: list[int] | None = None,
+    imp: list[int] | None = None,
+    hmax: list[int] | None = None,
+    bb: list[int] | None = None,
 ) -> None:
     """Compute and store commonly used indicators in ``df``.
 
     Parameters mirror the window lengths for simple moving averages, RSI,
-    average true range, historical volatility and impulse.
-    The new columns are added in place and shifted so signals use past data.
+    average true range, historical volatility, impulse, breakout highs and
+    Bollinger bands. Columns are added in bulk to minimise fragmentation.
     """
 
     log.info("Caching indicatori …")
 
+    sma = sorted(set(sma or []))
+    rsi = sorted(set(rsi or []))
+    atr = sorted(set(atr or []))
+    vol = sorted(set(vol or []))
+    imp = sorted(set(imp or []))
+    hmax = sorted(set(hmax or []))
+    bb = sorted(set(bb or []))
+
+    cols = {}
+
     # SMA
     for w in sma:
-        df[f"sma_{w}"] = df["close"].rolling(w).mean().shift(1)
+        cols[f"sma_{w}"] = df["close"].rolling(w).mean().shift(1)
 
     # RSI
-    delta = df["close"].diff()
-    up, down = delta.clip(lower=0), -delta.clip(upper=0)
-    for p in rsi:
-        rs = up.rolling(p).mean() / down.replace(0, np.nan).rolling(p).mean()
-        df[f"rsi_{p}"] = (100 - 100 / (1 + rs)).shift(1)
+    if rsi:
+        delta = df["close"].diff()
+        up, down = delta.clip(lower=0), -delta.clip(upper=0)
+        for p in rsi:
+            rs = up.rolling(p).mean() / down.replace(0, np.nan).rolling(p).mean()
+            cols[f"rsi_{p}"] = (100 - 100 / (1 + rs)).shift(1)
 
-    # ATR
-    tr = np.maximum(
-        df["high"] - df["low"],
-        np.maximum(
-            abs(df["high"] - df["close"].shift()),
-            abs(df["low"] - df["close"].shift()),
-        ),
-    )
-    df["tr"] = tr
-    for p in atr:
-        df[f"atr_{p}"] = tr.rolling(p).mean().shift(1)
+    # ATR and true range
+    if atr:
+        tr = np.maximum(
+            df["high"] - df["low"],
+            np.maximum(
+                abs(df["high"] - df["close"].shift()),
+                abs(df["low"] - df["close"].shift()),
+            ),
+        )
+        cols["tr"] = tr
+        for p in atr:
+            cols[f"atr_{p}"] = tr.rolling(p).mean().shift(1)
 
-    # Volatilità storica
-    for w in vol:
-        df[f"vol_{w}"] = df["close"].pct_change().rolling(w).std().shift(1)
+    # Historical volatility
+    if vol:
+        pct = df["close"].pct_change()
+        for w in vol:
+            cols[f"vol_{w}"] = pct.rolling(w).std().shift(1)
 
-    # Impulso
+    # Impulse
     for w in imp:
-        df[f"impulse_{w}"] = df["close"].pct_change(w).shift(1)
+        cols[f"impulse_{w}"] = df["close"].pct_change(w).shift(1)
+
+    # Breakout highs (HMAX)
+    for w in hmax:
+        cols[f"hmax_{w}"] = df["close"].shift(1).rolling(w).max()
+
+    # Bollinger bands
+    for w in bb:
+        cols[f"bbm_{w}"] = df["close"].rolling(w).mean().shift(1)
+        cols[f"bbs_{w}"] = df["close"].rolling(w).std().shift(1)
+
+    if cols:
+        df[list(cols.keys())] = pd.DataFrame(cols, index=df.index)
 
     log.info("Indicatori pronti.")

@@ -21,6 +21,7 @@ from .utils.io_utils import save_csv
 from .optimize import (
     optimize_with_optuna,
     PARAM_SPACES,
+    gather_indicator_periods,
     prune_sma,
     prune_rsi,
     prune_breakout,
@@ -86,6 +87,7 @@ STRATEGY_REGISTRY = {
     ),
 }
 
+
 def main(with_ml: bool = False) -> None:
     parser = argparse.ArgumentParser(description="Run trading backtest")
     parser.add_argument(
@@ -103,13 +105,16 @@ def main(with_ml: bool = False) -> None:
 
     # 1) Dati + indicatori -------------------------------------------------
     df = load_price_data(DATA_FILE)
+    periods = gather_indicator_periods(strategy_name)
     add_indicator_cache(
         df,
-        sma=list(range(5, 251)) + [300, 400],
-        rsi=[14],
-        atr=[14, 21],
-        vol=[20, 50],
-        imp=[5, 10],
+        sma=periods.get("sma", []),
+        rsi=periods.get("rsi", []),
+        atr=periods.get("atr", []),
+        vol=periods.get("vol", []),
+        imp=periods.get("imp", []),
+        hmax=periods.get("hmax", []),
+        bb=periods.get("bb", []),
     )
 
     # 2) Optuna (modulare!) ------------------------------------------------
@@ -133,7 +138,7 @@ def main(with_ml: bool = False) -> None:
     log.info("Riepilogo strategie salvato in %s", SUMMARY_FILE)
     log.info("=== PERFORMANCE ===\n%s", summary.to_string(index=False))
 
+
 if __name__ == "__main__":
     run_ml = os.getenv("RUN_ML", "0") == "1"
     main(with_ml=run_ml)
-
