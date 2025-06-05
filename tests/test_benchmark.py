@@ -8,3 +8,9 @@ def test_benchmark_sorted():
     assert list(result.columns) == ["strategy", "total_return"]
     values = result["total_return"].tolist()
     assert values == sorted(values, reverse=True)
+
+
+def test_benchmark_without_ml():
+    df = _dummy_df()
+    result = benchmark_strategies(df, n_trials=1, with_ml=False)
+    assert "RandomForest" not in result["strategy"].values
