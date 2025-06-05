@@ -67,7 +67,7 @@ def main() -> None:
     other.append(
         {
             "strategy": "RSI",
-            "total_return": run_reference_strategy(df, RSIStrategy(14, 30, 7, 20)),
+            "total_return": run_reference_strategy(df, RSIStrategy(RSIConfig(period=14, oversold=30, sl_pct=7, tp_pct=20))),
         }
     )
     other.append(
