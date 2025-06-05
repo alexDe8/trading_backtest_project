@@ -259,15 +259,16 @@ def optimize_with_optuna(
 
 
 # ---------------------- RETROCOMPATIBILITA' SMA ----------------------
-from .strategy.sma import SMACrossoverStrategy
+from .strategy import get_strategy
 
 
 def optimize_sma(df: pd.DataFrame, n_trials: int = 300):
     """Backward-compatible wrapper to optimize the SMA strategy."""
+    strategy_cls, config_cls = get_strategy("sma")
     return optimize_with_optuna(
         df,
-        SMACrossoverStrategy,
-        SMAConfig,
+        strategy_cls,
+        config_cls,
         PARAM_SPACES["sma"],
         prune_logic=prune_sma,
         n_trials=n_trials,
@@ -315,8 +316,9 @@ def grid_search(df: pd.DataFrame, combos: list[dict[str, Any]]) -> pd.DataFrame:
 
     log.info("Grid SMA – %d combo", len(combos))
     results = []
+    strategy_cls, _ = get_strategy("sma")
     for p in tqdm(combos, desc="SMA"):
         cfg = SMAConfig(**p)
-        ret = evaluate_strategy(df, lambda cfg=cfg: SMACrossoverStrategy(cfg))
+        ret = evaluate_strategy(df, lambda cfg=cfg: strategy_cls(cfg))
         results.append({**p, "total_return": ret})
     return pd.DataFrame(results).sort_values("total_return", ascending=False)
