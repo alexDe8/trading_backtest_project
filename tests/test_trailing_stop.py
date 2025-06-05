@@ -45,6 +45,9 @@ def test_trailing_stop_closes_trade():
     trade = trades.iloc[0]
     assert trade["qty"] == 1
     assert trade["exit"] == pytest.approx(110 * (1 - 0.05))
+    assert trade["entry_time"] == 1
+    assert trade["exit_time"] == 3
+    assert trade["entry"] == 100
 
 
 def test_trailing_stop_pct_must_be_positive():

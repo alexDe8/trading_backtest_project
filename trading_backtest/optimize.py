@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 from typing import Any, Callable
+from dataclasses import dataclass, fields
 import pandas as pd
 import optuna
 from tqdm import tqdm
@@ -15,49 +16,81 @@ from .config import (
     VolExpansionConfig,
 )
 
+
+@dataclass
+class ParamSpace:
+    """Base class for parameter ranges."""
+
+    def suggest(self, trial) -> dict[str, Any]:
+        params = {}
+        for f in fields(self):
+            info = getattr(self, f.name)
+            params[f.name] = suggest(trial, info, name=f.name)
+        return params
+
+
+@dataclass
+class SMAParamSpace(ParamSpace):
+    sma_fast: tuple = ("int", 5, 50, 5)
+    sma_slow: tuple = ("int", 100, 250, 5)
+    sma_trend: tuple = ("cat", [None, 200, 300, 400])
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 15, 25, 5)
+    position_size: tuple = ("float", 0.01, 0.2)
+    trailing_stop_pct: tuple = ("float", 0.5, 10.0)
+
+
+@dataclass
+class RSIParamSpace(ParamSpace):
+    period: tuple = ("int", 7, 21, 1)
+    oversold: tuple = ("int", 20, 40, 5)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
+@dataclass
+class BreakoutParamSpace(ParamSpace):
+    lookback: tuple = ("int", 20, 100, 5)
+    atr_period: tuple = ("int", 7, 21, 1)
+    atr_mult: tuple = ("float", 0.5, 2.0)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
+@dataclass
+class BollingerParamSpace(ParamSpace):
+    period: tuple = ("int", 10, 30, 2)
+    nstd: tuple = ("float", 1.5, 3.0, 0.1)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
+@dataclass
+class MomentumParamSpace(ParamSpace):
+    window: tuple = ("int", 5, 20, 1)
+    threshold: tuple = ("float", 0.01, 0.05, 0.01)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
+@dataclass
+class VolExpansionParamSpace(ParamSpace):
+    vol_window: tuple = ("int", 20, 100, 5)
+    vol_threshold: tuple = ("float", 0.6, 1.0, 0.05)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
 # ---------------------- PARAMETRI STRATEGIE --------------------------
 PARAM_SPACES = {
-    "sma": {
-        "sma_fast": ("int", 5, 50, 5),
-        "sma_slow": ("int", 100, 250, 5),
-        "sma_trend": ("cat", [None, 200, 300, 400]),
-        "sl_pct": ("int", 5, 10),
-        "tp_pct": ("int", 15, 25, 5),
-        "position_size": ("float", 0.01, 0.2),
-        "trailing_stop_pct": ("float", 0.5, 10.0),
-    },
-    "rsi": {
-        "period": ("int", 7, 21, 1),
-        "oversold": ("int", 20, 40, 5),
-        "sl_pct": ("int", 5, 10),
-        "tp_pct": ("int", 10, 25, 5),
-    },
-    "breakout": {
-        "lookback": ("int", 20, 100, 5),
-        "atr_period": ("int", 7, 21, 1),
-        "atr_mult": ("float", 0.5, 2.0),
-        "sl_pct": ("int", 5, 10),
-        "tp_pct": ("int", 10, 25, 5),
-    },
-    "bollinger": {
-        "period": ("int", 10, 30, 2),
-        "nstd": ("float", 1.5, 3.0, 0.1),
-        "sl_pct": ("int", 5, 10),
-        "tp_pct": ("int", 10, 25, 5),
-    },
-    "momentum": {
-        "window": ("int", 5, 20, 1),
-        "threshold": ("float", 0.01, 0.05, 0.01),
-        "sl_pct": ("int", 5, 10),
-        "tp_pct": ("int", 10, 25, 5),
-    },
-    "vol_expansion": {
-        "vol_window": ("int", 20, 100, 5),
-        "vol_threshold": ("float", 0.6, 1.0, 0.05),
-        "sl_pct": ("int", 5, 10),
-        "tp_pct": ("int", 10, 25, 5),
-    },
+    "sma": SMAParamSpace(),
+    "rsi": RSIParamSpace(),
+    "breakout": BreakoutParamSpace(),
+    "bollinger": BollingerParamSpace(),
+    "momentum": MomentumParamSpace(),
+    "vol_expansion": VolExpansionParamSpace(),
 }
+
 
 
 # ---------------------- SUGGEST UNIVERSALE ---------------------------
@@ -93,42 +126,43 @@ def suggest(trial, param_info, name=None):
 
 
 # ---------------------- PRUNE -----------------------------
+def check_sl_tp(params: dict[str, Any]) -> None:
+    """Raise :class:`optuna.TrialPruned` when stop loss is not less than take profit."""
+
+    if params["sl_pct"] >= params["tp_pct"]:
+        raise optuna.TrialPruned()
+
+
 def prune_sma(params, trial):
     """Prune trials where SMA parameters are inconsistent."""
+    check_sl_tp(params)
     if params["sma_fast"] >= params["sma_slow"]:
-        raise optuna.TrialPruned()
-    if params["sl_pct"] >= params["tp_pct"]:
         raise optuna.TrialPruned()
 
 
 def prune_rsi(params, trial):
     """Prune RSI trials with invalid stop or take-profit."""
-    if params["sl_pct"] >= params["tp_pct"]:
-        raise optuna.TrialPruned()
+    check_sl_tp(params)
 
 
 def prune_breakout(params, trial):
     """Prune breakout trials with invalid stop or take-profit."""
-    if params["sl_pct"] >= params["tp_pct"]:
-        raise optuna.TrialPruned()
+    check_sl_tp(params)
 
 
 def prune_bollinger(params, trial):
     """Prune Bollinger trials with invalid stop or take-profit."""
-    if params["sl_pct"] >= params["tp_pct"]:
-        raise optuna.TrialPruned()
+    check_sl_tp(params)
 
 
 def prune_momentum(params, trial):
     """Prune momentum trials with invalid stop or take-profit."""
-    if params["sl_pct"] >= params["tp_pct"]:
-        raise optuna.TrialPruned()
+    check_sl_tp(params)
 
 
 def prune_vol_expansion(params, trial):
     """Prune volatility expansion trials with invalid stop or take-profit."""
-    if params["sl_pct"] >= params["tp_pct"]:
-        raise optuna.TrialPruned()
+    check_sl_tp(params)
 
 
 # ---------------------- STRATEGY EVALUATION -----------------------------
@@ -151,9 +185,13 @@ def make_objective(
     """Create an Optuna objective for the provided strategy class."""
 
     def objective(trial):
-        params = {
-            name: suggest(trial, info, name=name) for name, info in param_space.items()
-        }
+        if hasattr(param_space, "suggest"):
+            params = param_space.suggest(trial)
+        else:
+            params = {
+                name: suggest(trial, info, name=name)
+                for name, info in param_space.items()
+            }
         if prune_logic is not None:
             prune_logic(params, trial)
         config = config_cls(**params)
