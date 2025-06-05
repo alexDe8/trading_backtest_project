@@ -1,4 +1,6 @@
 from __future__ import annotations
+import os
+import argparse
 import pandas as pd
 
 from .config import (
@@ -7,6 +9,12 @@ from .config import (
     DATA_FILE,
     log,
     SMAConfig,
+    RSIConfig,
+    BreakoutConfig,
+    BollingerConfig,
+    MomentumConfig,
+    VolExpansionConfig,
+    RandomForestConfig,
 )
 from .data import load_price_data, add_indicator_cache
 from .utils.io_utils import save_csv
@@ -14,14 +22,85 @@ from .optimize import (
     optimize_with_optuna,
     PARAM_SPACES,
     prune_sma,
+    prune_rsi,
+    prune_breakout,
+    prune_bollinger,
+    prune_momentum,
+    prune_vol_expansion,
     refined_sma_grid,
     grid_search,
 )
+from .performance import PerformanceAnalyzer
 from .benchmark import benchmark_strategies
+
 from .strategy.sma import SMACrossoverStrategy
+from .strategy.rsi import RSIStrategy
+from .strategy.breakout import BreakoutStrategy
+from .strategy.bollinger import BollingerBandStrategy
+from .strategy.momentum import MomentumImpulseStrategy, VolatilityExpansionStrategy
+from .strategy.random_forest import RandomForestStrategy
 
+# Registry dinamico per CLI
+STRATEGY_REGISTRY = {
+    "sma": (
+        SMACrossoverStrategy,
+        SMAConfig,
+        PARAM_SPACES["sma"],
+        prune_sma,
+    ),
+    "rsi": (
+        RSIStrategy,
+        RSIConfig,
+        PARAM_SPACES["rsi"],
+        prune_rsi,
+    ),
+    "breakout": (
+        BreakoutStrategy,
+        BreakoutConfig,
+        PARAM_SPACES["breakout"],
+        prune_breakout,
+    ),
+    "bollinger": (
+        BollingerBandStrategy,
+        BollingerConfig,
+        PARAM_SPACES["bollinger"],
+        prune_bollinger,
+    ),
+    "momentum": (
+        MomentumImpulseStrategy,
+        MomentumConfig,
+        PARAM_SPACES["momentum"],
+        prune_momentum,
+    ),
+    "vol_expansion": (
+        VolatilityExpansionStrategy,
+        VolExpansionConfig,
+        PARAM_SPACES["vol_expansion"],
+        prune_vol_expansion,
+    ),
+    "random_forest": (
+        RandomForestStrategy,
+        RandomForestConfig,
+        PARAM_SPACES.get("random_forest", {}),
+        lambda params: None,  # Prune function dummy per ML, aggiorna se ne hai una
+    ),
+}
 
-def main() -> None:
+def main(with_ml: bool = False) -> None:
+    parser = argparse.ArgumentParser(description="Run trading backtest")
+    parser.add_argument(
+        "--strategy",
+        choices=list(STRATEGY_REGISTRY.keys()),
+        help="Strategy name to optimize (overrides STRATEGY env var)",
+    )
+    args = parser.parse_args()
+
+    strategy_name = args.strategy or os.getenv("STRATEGY", "sma")
+    if strategy_name not in STRATEGY_REGISTRY:
+        raise SystemExit(f"Unknown strategy '{strategy_name}'")
+
+    strategy_cls, config_cls, param_space, prune_func = STRATEGY_REGISTRY[strategy_name]
+
     # 1) Dati + indicatori -------------------------------------------------
     df = load_price_data(DATA_FILE)
     add_indicator_cache(
@@ -32,25 +111,29 @@ def main() -> None:
         vol=[20, 50],
         imp=[5, 10],
     )
+
     # 2) Optuna (modulare!) ------------------------------------------------
     best_trial = optimize_with_optuna(
         df,
-        SMACrossoverStrategy,
-        SMAConfig,
-        PARAM_SPACES["sma"],
-        prune_logic=prune_sma,
+        strategy_cls,
+        config_cls,
+        param_space,
+        prune_logic=prune_func,
         n_trials=300,
     )
-    sma_grid = refined_sma_grid(best_trial.params)
-    grid_df = grid_search(df, sma_grid)
-    save_csv(grid_df, RESULTS_FILE)
-    log.info("Grid SMA salvato in %s", RESULTS_FILE)
 
-    # 3) Benchmark completo -----------------------------------------------
+    if strategy_name == "sma":
+        sma_grid = refined_sma_grid(best_trial.params)
+        grid_df = grid_search(df, sma_grid)
+        save_csv(grid_df, RESULTS_FILE)
+        log.info("Grid SMA salvato in %s", RESULTS_FILE)
+
+    # 3) Benchmark completo: classiche + ML -------------------------------
     summary = benchmark_strategies(df, n_trials=50)
     log.info("Riepilogo strategie salvato in %s", SUMMARY_FILE)
     log.info("=== PERFORMANCE ===\n%s", summary.to_string(index=False))
 
-
 if __name__ == "__main__":
-    main()
+    run_ml = os.getenv("RUN_ML", "0") == "1"
+    main(with_ml=run_ml)
+

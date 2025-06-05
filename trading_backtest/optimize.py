@@ -14,6 +14,8 @@ from .config import (
     BollingerConfig,
     MomentumConfig,
     VolExpansionConfig,
+    MACDConfig,
+    StochasticConfig,
 )
 
 
@@ -81,6 +83,24 @@ class VolExpansionParamSpace(ParamSpace):
     tp_pct: tuple = ("int", 10, 25, 5)
 
 
+@dataclass
+class MACDParamSpace(ParamSpace):
+    fast: tuple = ("int", 5, 20, 1)
+    slow: tuple = ("int", 21, 50, 1)
+    signal: tuple = ("int", 5, 20, 1)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
+@dataclass
+class StochasticParamSpace(ParamSpace):
+    k_period: tuple = ("int", 5, 30, 1)
+    d_period: tuple = ("int", 3, 10, 1)
+    oversold: tuple = ("int", 20, 40, 5)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
 # ---------------------- PARAMETRI STRATEGIE --------------------------
 PARAM_SPACES = {
     "sma": SMAParamSpace(),
@@ -89,8 +109,9 @@ PARAM_SPACES = {
     "bollinger": BollingerParamSpace(),
     "momentum": MomentumParamSpace(),
     "vol_expansion": VolExpansionParamSpace(),
+    "macd": MACDParamSpace(),
+    "stochastic": StochasticParamSpace(),
 }
-
 
 
 # ---------------------- SUGGEST UNIVERSALE ---------------------------
@@ -165,6 +186,20 @@ def prune_vol_expansion(params, trial):
     check_sl_tp(params)
 
 
+def prune_macd(params, trial):
+    """Prune MACD trials with invalid stop or EMA order."""
+    check_sl_tp(params)
+    if params["fast"] >= params["slow"]:
+        raise optuna.TrialPruned()
+
+
+def prune_stochastic(params, trial):
+    """Prune stochastic trials with invalid stop or period setup."""
+    check_sl_tp(params)
+    if params["d_period"] > params["k_period"]:
+        raise optuna.TrialPruned()
+
+
 # ---------------------- STRATEGY EVALUATION -----------------------------
 def evaluate_strategy(df: pd.DataFrame, make_strategy: Callable[[], Any]) -> float:
     """Return the total strategy return for the given dataframe."""
@@ -224,15 +259,16 @@ def optimize_with_optuna(
 
 
 # ---------------------- RETROCOMPATIBILITA' SMA ----------------------
-from .strategy.sma import SMACrossoverStrategy
+from .strategy import get_strategy
 
 
 def optimize_sma(df: pd.DataFrame, n_trials: int = 300):
     """Backward-compatible wrapper to optimize the SMA strategy."""
+    strategy_cls, config_cls = get_strategy("sma")
     return optimize_with_optuna(
         df,
-        SMACrossoverStrategy,
-        SMAConfig,
+        strategy_cls,
+        config_cls,
         PARAM_SPACES["sma"],
         prune_logic=prune_sma,
         n_trials=n_trials,
@@ -280,8 +316,9 @@ def grid_search(df: pd.DataFrame, combos: list[dict[str, Any]]) -> pd.DataFrame:
 
     log.info("Grid SMA – %d combo", len(combos))
     results = []
+    strategy_cls, _ = get_strategy("sma")
     for p in tqdm(combos, desc="SMA"):
         cfg = SMAConfig(**p)
-        ret = evaluate_strategy(df, lambda cfg=cfg: SMACrossoverStrategy(cfg))
+        ret = evaluate_strategy(df, lambda cfg=cfg: strategy_cls(cfg))
         results.append({**p, "total_return": ret})
     return pd.DataFrame(results).sort_values("total_return", ascending=False)

@@ -48,7 +48,7 @@ accepts an additional `position_size` parameter used to size trades. The
 generated DataFrame now includes a `qty` column with this value:
 
 ```python
-from trading_backtest.strategy.sma import SMACrossoverStrategy
+from trading_backtest.strategy import get_strategy
 from trading_backtest.config import SMAConfig
 
 cfg = SMAConfig(
@@ -60,11 +60,13 @@ cfg = SMAConfig(
     position_size=0.1,
     trailing_stop_pct=2.0,
 )
-strat = SMACrossoverStrategy(cfg)
+strategy_cls, _ = get_strategy("sma")
+strat = strategy_cls(cfg)
 trades = strat.generate_trades(df)
 ```
 
 For strategies without the `position_size` parameter, `qty` defaults to `1`.
+
 
 ## Benchmark output
 
@@ -76,4 +78,18 @@ for each strategy. A simplified example of the table is shown below:
 | SMA           | 120.5        |
 | Bollinger     | 80.1         |
 | RandomForest  | 50.0         |
+
+## Command line option
+
+The main entry point supports selecting which strategy to optimize. Use
+`--strategy` or set the `STRATEGY` environment variable. Available values are
+`sma`, `rsi`, `breakout`, `bollinger`, `momentum` and `vol_expansion`. When the
+option is omitted, `sma` is used by default:
+
+```bash
+python run.py --strategy rsi
+# or via environment variable
+STRATEGY=breakout python run.py
+```
+
 

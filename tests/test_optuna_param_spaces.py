@@ -1,5 +1,3 @@
-import pathlib
-import sys
 import optuna
 import pandas as pd
 import numpy as np
@@ -13,22 +11,19 @@ from trading_backtest.optimize import (
     prune_bollinger,
     prune_momentum,
     prune_vol_expansion,
+    prune_macd,
+    prune_stochastic,
     SMAParamSpace,
     RSIParamSpace,
     BreakoutParamSpace,
     BollingerParamSpace,
     MomentumParamSpace,
     VolExpansionParamSpace,
+    MACDParamSpace,
+    StochasticParamSpace,
     check_sl_tp,
 )
-from trading_backtest.strategy.sma import SMACrossoverStrategy
-from trading_backtest.strategy.rsi import RSIStrategy
-from trading_backtest.strategy.breakout import BreakoutStrategy
-from trading_backtest.strategy.bollinger import BollingerBandStrategy
-from trading_backtest.strategy.momentum import (
-    MomentumImpulseStrategy,
-    VolatilityExpansionStrategy,
-)
+from trading_backtest.strategy import get_strategy
 from trading_backtest.config import (
     SMAConfig,
     RSIConfig,
@@ -36,6 +31,8 @@ from trading_backtest.config import (
     BollingerConfig,
     MomentumConfig,
     VolExpansionConfig,
+    MACDConfig,
+    StochasticConfig,
 )
 
 
@@ -73,78 +70,40 @@ def _dummy_df() -> pd.DataFrame:
 
 
 def test_generate_trades_runs():
-    # Variante: puoi anche parametrizzare con pytest.mark.parametrize come nel test di Codex!
     configs = [
-        (
-            SMACrossoverStrategy,
-            SMAConfig(
-                sma_fast=5,
-                sma_slow=10,
-                sma_trend=20,
-                sl_pct=1,
-                tp_pct=2,
-                position_size=1,
-                trailing_stop_pct=1,
-            ),
-        ),
-        (
-            RSIStrategy,
-            RSIConfig(period=14, oversold=30, sl_pct=1, tp_pct=2),
-        ),
-        (
-            BreakoutStrategy,
-            BreakoutConfig(
-                lookback=20, atr_period=14, atr_mult=1.0, sl_pct=1, tp_pct=2
-            ),
-        ),
-        (
-            BollingerBandStrategy,
-            BollingerConfig(period=20, nstd=2.0, sl_pct=1, tp_pct=2),
-        ),
-        (
-            MomentumImpulseStrategy,
-            MomentumConfig(window=10, threshold=0, sl_pct=1, tp_pct=2),
-        ),
-        (
-            VolatilityExpansionStrategy,
-            VolExpansionConfig(
-                vol_window=20, vol_threshold=0.4, sl_pct=1, tp_pct=2
-            ),
-        ),
+        ("sma", SMAConfig(sma_fast=5, sma_slow=10, sma_trend=20, sl_pct=1, tp_pct=2, position_size=1, trailing_stop_pct=1)),
+        ("rsi", RSIConfig(period=14, oversold=30, sl_pct=1, tp_pct=2)),
+        ("breakout", BreakoutConfig(lookback=20, atr_period=14, atr_mult=1.0, sl_pct=1, tp_pct=2)),
+        ("bollinger", BollingerConfig(period=20, nstd=2.0, sl_pct=1, tp_pct=2)),
+        ("momentum", MomentumConfig(window=10, threshold=0, sl_pct=1, tp_pct=2)),
+        ("vol_expansion", VolExpansionConfig(vol_window=20, vol_threshold=0.4, sl_pct=1, tp_pct=2)),
+        ("macd", MACDConfig(fast=12, slow=26, signal=9, sl_pct=1, tp_pct=2)),
+        ("stochastic", StochasticConfig(k_period=14, d_period=3, oversold=20, sl_pct=1, tp_pct=2)),
     ]
     df = _dummy_df()
-    for strategy_cls, cfg in configs:
+    for name, cfg in configs:
+        strategy_cls, _ = get_strategy(name)
         strat = strategy_cls(cfg)
         trades = strat.generate_trades(df)
         assert isinstance(trades, pd.DataFrame)
 
+
 def test_optimize_instantiates_strategies():
     df = _dummy_df()
     configs = [
-        (SMACrossoverStrategy, SMAConfig, SMAParamSpace(), prune_sma),
-        (RSIStrategy, RSIConfig, RSIParamSpace(), prune_rsi),
-        (BreakoutStrategy, BreakoutConfig, BreakoutParamSpace(), prune_breakout),
-        (
-            BollingerBandStrategy,
-            BollingerConfig,
-            BollingerParamSpace(),
-            prune_bollinger,
-        ),
-        (
-            MomentumImpulseStrategy,
-            MomentumConfig,
-            MomentumParamSpace(),
-            prune_momentum,
-        ),
-        (
-            VolatilityExpansionStrategy,
-            VolExpansionConfig,
-            VolExpansionParamSpace(),
-            prune_vol_expansion,
-        ),
+        ("sma", SMAConfig, SMAParamSpace(), prune_sma),
+        ("rsi", RSIConfig, RSIParamSpace(), prune_rsi),
+        ("breakout", BreakoutConfig, BreakoutParamSpace(), prune_breakout),
+        ("bollinger", BollingerConfig, BollingerParamSpace(), prune_bollinger),
+        ("momentum", MomentumConfig, MomentumParamSpace(), prune_momentum),
+        ("vol_expansion", VolExpansionConfig, VolExpansionParamSpace(), prune_vol_expansion),
+        ("macd", MACDConfig, MACDParamSpace(), prune_macd),
+        ("stochastic", StochasticConfig, StochasticParamSpace(), prune_stochastic),
     ]
-    for cls, cfg_cls, space, prune in configs:
-        optimize_with_optuna(df, cls, cfg_cls, space, prune_logic=prune, n_trials=1)
+    for name, cfg_cls, space, prune in configs:
+        strategy_cls, _ = get_strategy(name)
+        optimize_with_optuna(df, strategy_cls, cfg_cls, space, prune_logic=prune, n_trials=1)
+
 
 def test_check_sl_tp_pruning():
     check_sl_tp({"sl_pct": 5, "tp_pct": 10})
