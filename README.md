@@ -29,7 +29,8 @@ pip install -r requirements.txt
 ## Strategy usage
 
 Each strategy exposes a `generate_trades(df)` method. The SMA crossover strategy
-accepts an additional `position_size` parameter used to size trades:
+accepts an additional `position_size` parameter used to size trades. The
+generated DataFrame now includes a `qty` column with this value:
 
 ```python
 from trading_backtest.strategy.sma import SMACrossoverStrategy
@@ -45,4 +46,6 @@ strat = SMACrossoverStrategy(
 )
 trades = strat.generate_trades(df)
 ```
+
+For strategies without the `position_size` parameter, `qty` defaults to `1`.
 
