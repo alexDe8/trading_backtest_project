@@ -1,4 +1,6 @@
 from __future__ import annotations
+import os
+import argparse
 import pandas as pd
 
 from .config import (
@@ -12,6 +14,7 @@ from .config import (
     BollingerConfig,
     MomentumConfig,
     VolExpansionConfig,
+    RandomForestConfig,
 )
 from .data import load_price_data, add_indicator_cache
 from .utils.io_utils import save_csv
@@ -19,6 +22,11 @@ from .optimize import (
     optimize_with_optuna,
     PARAM_SPACES,
     prune_sma,
+    prune_rsi,
+    prune_breakout,
+    prune_bollinger,
+    prune_momentum,
+    prune_vol_expansion,
     refined_sma_grid,
     grid_search,
 )
@@ -30,8 +38,52 @@ from .strategy.breakout import BreakoutStrategy
 from .strategy.bollinger import BollingerBandStrategy
 from .strategy.momentum import MomentumImpulseStrategy, VolatilityExpansionStrategy
 from .strategy.random_forest import RandomForestStrategy
-from .config import RandomForestConfig
 
+# STRATEGY_REGISTRY dinamico (per CLI)
+STRATEGY_REGISTRY = {
+    "sma": (
+        SMACrossoverStrategy,
+        SMAConfig,
+        PARAM_SPACES["sma"],
+        prune_sma,
+    ),
+    "rsi": (
+        RSIStrategy,
+        RSIConfig,
+        PARAM_SPACES["rsi"],
+        prune_rsi,
+    ),
+    "breakout": (
+        BreakoutStrategy,
+        BreakoutConfig,
+        PARAM_SPACES["breakout"],
+        prune_breakout,
+    ),
+    "bollinger": (
+        BollingerBandStrategy,
+        BollingerConfig,
+        PARAM_SPACES["bollinger"],
+        prune_bollinger,
+    ),
+    "momentum": (
+        MomentumImpulseStrategy,
+        MomentumConfig,
+        PARAM_SPACES["momentum"],
+        prune_momentum,
+    ),
+    "vol_expansion": (
+        VolatilityExpansionStrategy,
+        VolExpansionConfig,
+        PARAM_SPACES["vol_expansion"],
+        prune_vol_expansion,
+    ),
+    "random_forest": (
+        RandomForestStrategy,
+        RandomForestConfig,
+        PARAM_SPACES.get("random_forest", {}),  # Se hai il param space anche per RF
+        lambda params: None,  # Prune function dummy o la tua logica ML
+    ),
+}
 
 def create_reference_strategies(df: pd.DataFrame, include_ml: bool = False):
     """Return list of (name, strategy_instance) tuples."""
@@ -93,14 +145,26 @@ def create_reference_strategies(df: pd.DataFrame, include_ml: bool = False):
         )
     return strategies
 
-
 def run_reference_strategy(df: pd.DataFrame, strategy_instance) -> float:
     """Return total return for a given strategy instance."""
     trades = strategy_instance.generate_trades(df)
     return PerformanceAnalyzer(trades).total_return()
 
-
 def main(with_ml: bool = False) -> None:
+    parser = argparse.ArgumentParser(description="Run trading backtest")
+    parser.add_argument(
+        "--strategy",
+        choices=list(STRATEGY_REGISTRY.keys()),
+        help="Strategy name to optimize (overrides STRATEGY env var)",
+    )
+    args = parser.parse_args()
+
+    strategy_name = args.strategy or os.getenv("STRATEGY", "sma")
+    if strategy_name not in STRATEGY_REGISTRY:
+        raise SystemExit(f"Unknown strategy '{strategy_name}'")
+
+    strategy_cls, config_cls, param_space, prune_func = STRATEGY_REGISTRY[strategy_name]
+
     # 1) Dati + indicatori -------------------------------------------------
     df = load_price_data(DATA_FILE)
     add_indicator_cache(
@@ -114,16 +178,17 @@ def main(with_ml: bool = False) -> None:
     # 2) Optuna (modulare!) ------------------------------------------------
     best_trial = optimize_with_optuna(
         df,
-        SMACrossoverStrategy,
-        SMAConfig,
-        PARAM_SPACES["sma"],
-        prune_logic=prune_sma,
+        strategy_cls,
+        config_cls,
+        param_space,
+        prune_logic=prune_func,
         n_trials=300,
     )
-    sma_grid = refined_sma_grid(best_trial.params)
-    grid_df = grid_search(df, sma_grid)
-    save_csv(grid_df, RESULTS_FILE)
-    log.info("Grid SMA salvato in %s", RESULTS_FILE)
+    if strategy_name == "sma":
+        sma_grid = refined_sma_grid(best_trial.params)
+        grid_df = grid_search(df, sma_grid)
+        save_csv(grid_df, RESULTS_FILE)
+        log.info("Grid SMA salvato in %s", RESULTS_FILE)
 
     # 3) Strategie di riferimento ------------------------------------------
     ref_strategies = create_reference_strategies(df, include_ml=with_ml)
@@ -142,7 +207,5 @@ def main(with_ml: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    import os
-
     run_ml = os.getenv("RUN_ML", "0") == "1"
     main(with_ml=run_ml)
