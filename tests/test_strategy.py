@@ -25,7 +25,7 @@ def test_rsi_strategy_generate_single_trade():
     assert trade["qty"] == 1
     assert trade["entry_time"] == df.loc[2, "timestamp"]
     assert trade["exit_time"] == df.loc[4, "timestamp"]
-    expected_pct = ((df.loc[2, "close"] * 1.1) / df.loc[2, "close"] - 1) * 100
+    expected_pct = (df.loc[4, "close"] / df.loc[2, "close"] - 1) * 100
     assert trade["pct_change"] == expected_pct
 
 
