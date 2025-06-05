@@ -29,12 +29,14 @@ from .strategy.rsi import RSIStrategy
 from .strategy.breakout import BreakoutStrategy
 from .strategy.bollinger import BollingerBandStrategy
 from .strategy.momentum import MomentumImpulseStrategy, VolatilityExpansionStrategy
+from .strategy.random_forest import RandomForestStrategy
+from .config import RandomForestConfig
 
 
-def create_reference_strategies(df: pd.DataFrame):
+def create_reference_strategies(df: pd.DataFrame, include_ml: bool = False):
     """Return list of (name, strategy_instance) tuples."""
     vol_thr = df["vol_50"].quantile(0.80)
-    return [
+    strategies = [
         (
             "RSI",
             RSIStrategy(RSIConfig(period=14, oversold=30, sl_pct=7, tp_pct=20)),
@@ -75,6 +77,21 @@ def create_reference_strategies(df: pd.DataFrame):
             ),
         ),
     ]
+    if include_ml:
+        strategies.append(
+            (
+                "RandomForest",
+                RandomForestStrategy(
+                    RandomForestConfig(
+                        entry_threshold=0.55,
+                        exit_threshold=0.45,
+                        sl_pct=7,
+                        tp_pct=20,
+                    )
+                ),
+            )
+        )
+    return strategies
 
 
 def run_reference_strategy(df: pd.DataFrame, strategy_instance) -> float:
@@ -83,7 +100,7 @@ def run_reference_strategy(df: pd.DataFrame, strategy_instance) -> float:
     return PerformanceAnalyzer(trades).total_return()
 
 
-def main() -> None:
+def main(with_ml: bool = False) -> None:
     # 1) Dati + indicatori -------------------------------------------------
     df = load_price_data(DATA_FILE)
     add_indicator_cache(
@@ -109,7 +126,7 @@ def main() -> None:
     log.info("Grid SMA salvato in %s", RESULTS_FILE)
 
     # 3) Strategie di riferimento ------------------------------------------
-    ref_strategies = create_reference_strategies(df)
+    ref_strategies = create_reference_strategies(df, include_ml=with_ml)
     other = [
         {
             "strategy": name,
@@ -125,4 +142,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import os
+
+    run_ml = os.getenv("RUN_ML", "0") == "1"
+    main(with_ml=run_ml)

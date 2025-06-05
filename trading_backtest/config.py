@@ -70,3 +70,12 @@ class VolExpansionConfig:
     vol_threshold: float
     sl_pct: float
     tp_pct: float
+
+
+@dataclass
+class RandomForestConfig:
+    entry_threshold: float
+    exit_threshold: float
+    sl_pct: float
+    tp_pct: float
+    n_estimators: int = 100
