@@ -4,10 +4,21 @@ import pandas as pd
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from dataclasses import dataclass
 from trading_backtest.strategy.base import BaseStrategy
 
 
+@dataclass
+class DummyConfig:
+    sl_pct: float
+    tp_pct: float
+    trailing_stop_pct: float
+
+
 class DummyStrategy(BaseStrategy):
+    def __init__(self, config: DummyConfig):
+        super().__init__(config)
+
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         return df
 
@@ -27,7 +38,8 @@ def test_trailing_stop_closes_trade():
             {"timestamp": 3, "close": 106, "high": 111, "low": 104},
         ]
     )
-    strat = DummyStrategy(sl_pct=0, tp_pct=100, trailing_stop_pct=5)
+    cfg = DummyConfig(sl_pct=0, tp_pct=100, trailing_stop_pct=5)
+    strat = DummyStrategy(cfg)
     trades = strat.generate_trades(df)
     assert len(trades) == 1
     trade = trades.iloc[0]
@@ -37,4 +49,4 @@ def test_trailing_stop_closes_trade():
 
 def test_trailing_stop_pct_must_be_positive():
     with pytest.raises(ValueError):
-        DummyStrategy(sl_pct=1, tp_pct=2, trailing_stop_pct=0)
+        DummyStrategy(DummyConfig(sl_pct=1, tp_pct=2, trailing_stop_pct=0))

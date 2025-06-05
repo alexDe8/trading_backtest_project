@@ -67,14 +67,21 @@ def main() -> None:
     other.append(
         {
             "strategy": "RSI",
-            "total_return": run_reference_strategy(df, RSIStrategy(RSIConfig(period=14, oversold=30, sl_pct=7, tp_pct=20))),
+            "total_return": run_reference_strategy(
+                df, RSIStrategy(RSIConfig(period=14, oversold=30, sl_pct=7, tp_pct=20))
+            ),
         }
     )
     other.append(
         {
             "strategy": "Breakout",
             "total_return": run_reference_strategy(
-                df, BreakoutStrategy(55, 14, 1.0, 7, 20)
+                df,
+                BreakoutStrategy(
+                    BreakoutConfig(
+                        lookback=55, atr_period=14, atr_mult=1.0, sl_pct=7, tp_pct=20
+                    )
+                ),
             ),
         }
     )
@@ -83,7 +90,12 @@ def main() -> None:
         {
             "strategy": "VolExpansion",
             "total_return": run_reference_strategy(
-                df, VolatilityExpansionStrategy(50, vol_thr, 7, 20)
+                df,
+                VolatilityExpansionStrategy(
+                    VolExpansionConfig(
+                        vol_window=50, vol_threshold=vol_thr, sl_pct=7, tp_pct=20
+                    )
+                ),
             ),
         }
     )
@@ -91,7 +103,10 @@ def main() -> None:
         {
             "strategy": "Bollinger",
             "total_return": run_reference_strategy(
-                df, BollingerBandStrategy(20, 2.0, 7, 15)
+                df,
+                BollingerBandStrategy(
+                    BollingerConfig(period=20, nstd=2.0, sl_pct=7, tp_pct=15)
+                ),
             ),
         }
     )
@@ -99,7 +114,10 @@ def main() -> None:
         {
             "strategy": "Momentum",
             "total_return": run_reference_strategy(
-                df, MomentumImpulseStrategy(10, 0.02, 7, 20)
+                df,
+                MomentumImpulseStrategy(
+                    MomentumConfig(window=10, threshold=0.02, sl_pct=7, tp_pct=20)
+                ),
             ),
         }
     )
