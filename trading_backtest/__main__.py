@@ -134,7 +134,7 @@ def main(with_ml: bool = False) -> None:
         log.info("Grid SMA salvato in %s", RESULTS_FILE)
 
     # 3) Benchmark completo: classiche + ML -------------------------------
-    summary = benchmark_strategies(df, n_trials=25)
+    summary = benchmark_strategies(df, n_trials=25, with_ml=with_ml)
     log.info("Riepilogo strategie salvato in %s", SUMMARY_FILE)
     log.info("=== PERFORMANCE ===\n%s", summary.to_string(index=False))
 

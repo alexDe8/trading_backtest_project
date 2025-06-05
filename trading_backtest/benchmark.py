@@ -35,7 +35,9 @@ from .optimize import (
 from .performance import PerformanceAnalyzer
 
 
-def benchmark_strategies(df: pd.DataFrame, n_trials: int = 50) -> pd.DataFrame:
+def benchmark_strategies(
+    df: pd.DataFrame, n_trials: int = 50, with_ml: bool = True
+) -> pd.DataFrame:
     """Optimize each classical strategy then evaluate on ``df``.
 
     The resulting DataFrame is sorted by ``total_return``.
@@ -85,15 +87,18 @@ def benchmark_strategies(df: pd.DataFrame, n_trials: int = 50) -> pd.DataFrame:
         results.append({"strategy": name, "total_return": ret})
 
     # Machine learning strategy is not optimized here
-    rf_cfg = RandomForestConfig(n_estimators=50, max_depth=None, sl_pct=5, tp_pct=10)
-    rf = RandomForestStrategy(rf_cfg)
-    trades = rf.generate_trades(df)
-    results.append(
-        {
-            "strategy": "RandomForest",
-            "total_return": PerformanceAnalyzer(trades).total_return(),
-        }
-    )
+    if with_ml:
+        rf_cfg = RandomForestConfig(
+            n_estimators=50, max_depth=None, sl_pct=5, tp_pct=10
+        )
+        rf = RandomForestStrategy(rf_cfg)
+        trades = rf.generate_trades(df)
+        results.append(
+            {
+                "strategy": "RandomForest",
+                "total_return": PerformanceAnalyzer(trades).total_return(),
+            }
+        )
 
     summary = pd.DataFrame(results).sort_values("total_return", ascending=False)
     save_csv(summary, SUMMARY_FILE)
