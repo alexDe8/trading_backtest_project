@@ -16,7 +16,7 @@ def test_rsi_strategy_generate_single_trade():
             "rsi_14": [25, 28, 35, 45, 55],
         }
     )
-    cfg = RSIConfig(period=14, oversold=30, sl_pct=50, tp_pct=50)
+    cfg = RSIConfig(period=14, oversold=30, sl_pct=40, tp_pct=50)
     strat = RSIStrategy(cfg)
     trades = strat.generate_trades(df)
     assert len(trades) == 1
