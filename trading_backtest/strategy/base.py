@@ -30,16 +30,15 @@ class Trade:
 class BaseStrategy(ABC):
     """Scheletro comune per strategie long-only."""
 
-    def __init__(
-        self, sl_pct: float, tp_pct: float, trailing_stop_pct: float | None = None
-    ) -> None:
-        if sl_pct >= tp_pct:
+    def __init__(self, config: Any) -> None:
+        self.config = config
+        self.sl_pct = config.sl_pct
+        self.tp_pct = config.tp_pct
+        self.trailing_stop_pct = getattr(config, "trailing_stop_pct", None)
+        if self.sl_pct >= self.tp_pct:
             raise ValueError("sl_pct must be less than tp_pct")
-        if trailing_stop_pct is not None and trailing_stop_pct <= 0:
+        if self.trailing_stop_pct is not None and self.trailing_stop_pct <= 0:
             raise ValueError("trailing_stop_pct must be positive")
-        self.sl_pct = sl_pct
-        self.tp_pct = tp_pct
-        self.trailing_stop_pct = trailing_stop_pct
         # opzionale: puoi permettere di impostare la size
         # self.position_size = 1
 
