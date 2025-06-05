@@ -43,12 +43,37 @@ def _dummy_df() -> pd.DataFrame:
 @pytest.mark.parametrize(
     "name, cfg",
     [
-        ("sma", SMAConfig(...)),
-        ("rsi", RSIConfig(...)),
-        ("breakout", BreakoutConfig(...)),
-        ("bollinger", BollingerConfig(...)),
-        ("momentum", MomentumConfig(...)),
-        ("vol_expansion", VolExpansionConfig(...)),
+        (
+            "sma",
+            SMAConfig(
+                sma_fast=5,
+                sma_slow=10,
+                sma_trend=20,
+                sl_pct=1,
+                tp_pct=2,
+                position_size=1,
+                trailing_stop_pct=1,
+            ),
+        ),
+        ("rsi", RSIConfig(period=14, oversold=30, sl_pct=1, tp_pct=2)),
+        (
+            "breakout",
+            BreakoutConfig(
+                lookback=20, atr_period=14, atr_mult=1.0, sl_pct=1, tp_pct=2
+            ),
+        ),
+        (
+            "bollinger",
+            BollingerConfig(period=20, nstd=2.0, sl_pct=1, tp_pct=2),
+        ),
+        (
+            "momentum",
+            MomentumConfig(window=10, threshold=0, sl_pct=1, tp_pct=2),
+        ),
+        (
+            "vol_expansion",
+            VolExpansionConfig(vol_window=20, vol_threshold=0.4, sl_pct=1, tp_pct=2),
+        ),
         ("macd", MACDConfig(fast=12, slow=26, signal=9, sl_pct=1, tp_pct=2)),
         (
             "stochastic",
