@@ -14,6 +14,8 @@ from .config import (
     BollingerConfig,
     MomentumConfig,
     VolExpansionConfig,
+    MACDConfig,
+    StochasticConfig,
 )
 
 
@@ -81,6 +83,24 @@ class VolExpansionParamSpace(ParamSpace):
     tp_pct: tuple = ("int", 10, 25, 5)
 
 
+@dataclass
+class MACDParamSpace(ParamSpace):
+    fast: tuple = ("int", 5, 20, 1)
+    slow: tuple = ("int", 21, 50, 1)
+    signal: tuple = ("int", 5, 20, 1)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
+@dataclass
+class StochasticParamSpace(ParamSpace):
+    k_period: tuple = ("int", 5, 30, 1)
+    d_period: tuple = ("int", 3, 10, 1)
+    oversold: tuple = ("int", 20, 40, 5)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
 # ---------------------- PARAMETRI STRATEGIE --------------------------
 PARAM_SPACES = {
     "sma": SMAParamSpace(),
@@ -89,6 +109,8 @@ PARAM_SPACES = {
     "bollinger": BollingerParamSpace(),
     "momentum": MomentumParamSpace(),
     "vol_expansion": VolExpansionParamSpace(),
+    "macd": MACDParamSpace(),
+    "stochastic": StochasticParamSpace(),
 }
 
 
@@ -162,6 +184,20 @@ def prune_momentum(params, trial):
 def prune_vol_expansion(params, trial):
     """Prune volatility expansion trials with invalid stop or take-profit."""
     check_sl_tp(params)
+
+
+def prune_macd(params, trial):
+    """Prune MACD trials with invalid stop or EMA order."""
+    check_sl_tp(params)
+    if params["fast"] >= params["slow"]:
+        raise optuna.TrialPruned()
+
+
+def prune_stochastic(params, trial):
+    """Prune stochastic trials with invalid stop or period setup."""
+    check_sl_tp(params)
+    if params["d_period"] > params["k_period"]:
+        raise optuna.TrialPruned()
 
 
 # ---------------------- STRATEGY EVALUATION -----------------------------

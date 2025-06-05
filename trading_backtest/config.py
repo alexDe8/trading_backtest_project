@@ -70,3 +70,21 @@ class VolExpansionConfig:
     vol_threshold: float
     sl_pct: float
     tp_pct: float
+
+
+@dataclass
+class MACDConfig:
+    fast: int
+    slow: int
+    signal: int
+    sl_pct: float
+    tp_pct: float
+
+
+@dataclass
+class StochasticConfig:
+    k_period: int
+    d_period: int
+    oversold: int
+    sl_pct: float
+    tp_pct: float
