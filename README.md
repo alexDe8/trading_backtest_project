@@ -92,4 +92,18 @@ python run.py --strategy rsi
 STRATEGY=breakout python run.py
 ```
 
+You can control how many Optuna trials are executed with `--trials` or the
+`TRIALS` environment variable. Use `--benchmark` (or `BENCHMARK=1`) to run a
+short optimization for all supported strategies instead of a single one.
+
+```bash
+# optimize only the RSI strategy with 100 trials
+python run.py --strategy rsi --trials 100
+
+# run the benchmark across all strategies
+python run.py --benchmark
+# or via environment variable
+BENCHMARK=1 python run.py
+```
+
 
