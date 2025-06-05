@@ -31,6 +31,52 @@ from .strategy.bollinger import BollingerBandStrategy
 from .strategy.momentum import MomentumImpulseStrategy, VolatilityExpansionStrategy
 
 
+def create_reference_strategies(df: pd.DataFrame):
+    """Return list of (name, strategy_instance) tuples."""
+    vol_thr = df["vol_50"].quantile(0.80)
+    return [
+        (
+            "RSI",
+            RSIStrategy(RSIConfig(period=14, oversold=30, sl_pct=7, tp_pct=20)),
+        ),
+        (
+            "Breakout",
+            BreakoutStrategy(
+                BreakoutConfig(
+                    lookback=55,
+                    atr_period=14,
+                    atr_mult=1.0,
+                    sl_pct=7,
+                    tp_pct=20,
+                )
+            ),
+        ),
+        (
+            "VolExpansion",
+            VolatilityExpansionStrategy(
+                VolExpansionConfig(
+                    vol_window=50,
+                    vol_threshold=vol_thr,
+                    sl_pct=7,
+                    tp_pct=20,
+                )
+            ),
+        ),
+        (
+            "Bollinger",
+            BollingerBandStrategy(
+                BollingerConfig(period=20, nstd=2.0, sl_pct=7, tp_pct=15)
+            ),
+        ),
+        (
+            "Momentum",
+            MomentumImpulseStrategy(
+                MomentumConfig(window=10, threshold=0.02, sl_pct=7, tp_pct=20)
+            ),
+        ),
+    ]
+
+
 def run_reference_strategy(df: pd.DataFrame, strategy_instance) -> float:
     """Return total return for a given strategy instance."""
     trades = strategy_instance.generate_trades(df)
@@ -63,64 +109,14 @@ def main() -> None:
     log.info("Grid SMA salvato in %s", RESULTS_FILE)
 
     # 3) Strategie di riferimento ------------------------------------------
-    other = []
-    other.append(
+    ref_strategies = create_reference_strategies(df)
+    other = [
         {
-            "strategy": "RSI",
-            "total_return": run_reference_strategy(
-                df, RSIStrategy(RSIConfig(period=14, oversold=30, sl_pct=7, tp_pct=20))
-            ),
+            "strategy": name,
+            "total_return": run_reference_strategy(df, strat),
         }
-    )
-    other.append(
-        {
-            "strategy": "Breakout",
-            "total_return": run_reference_strategy(
-                df,
-                BreakoutStrategy(
-                    BreakoutConfig(
-                        lookback=55, atr_period=14, atr_mult=1.0, sl_pct=7, tp_pct=20
-                    )
-                ),
-            ),
-        }
-    )
-    vol_thr = df["vol_50"].quantile(0.80)
-    other.append(
-        {
-            "strategy": "VolExpansion",
-            "total_return": run_reference_strategy(
-                df,
-                VolatilityExpansionStrategy(
-                    VolExpansionConfig(
-                        vol_window=50, vol_threshold=vol_thr, sl_pct=7, tp_pct=20
-                    )
-                ),
-            ),
-        }
-    )
-    other.append(
-        {
-            "strategy": "Bollinger",
-            "total_return": run_reference_strategy(
-                df,
-                BollingerBandStrategy(
-                    BollingerConfig(period=20, nstd=2.0, sl_pct=7, tp_pct=15)
-                ),
-            ),
-        }
-    )
-    other.append(
-        {
-            "strategy": "Momentum",
-            "total_return": run_reference_strategy(
-                df,
-                MomentumImpulseStrategy(
-                    MomentumConfig(window=10, threshold=0.02, sl_pct=7, tp_pct=20)
-                ),
-            ),
-        }
-    )
+        for name, strat in ref_strategies
+    ]
 
     summary = pd.DataFrame(other).sort_values("total_return", ascending=False)
     save_csv(summary, SUMMARY_FILE)
