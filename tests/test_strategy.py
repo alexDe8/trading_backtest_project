@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from trading_backtest.strategy.rsi import RSIStrategy
+from trading_backtest.strategy import get_strategy
 from trading_backtest.config import RSIConfig
 
 
@@ -17,7 +17,8 @@ def test_rsi_strategy_generate_single_trade():
         }
     )
     cfg = RSIConfig(period=14, oversold=30, sl_pct=40, tp_pct=50)
-    strat = RSIStrategy(cfg)
+    strategy_cls, _ = get_strategy("rsi")
+    strat = strategy_cls(cfg)
     trades = strat.generate_trades(df)
     assert len(trades) == 1
 
@@ -33,5 +34,6 @@ def test_rsi_strategy_generate_single_trade():
 
 def test_rsi_strategy_invalid_sl_tp():
     cfg = RSIConfig(period=14, oversold=30, sl_pct=10, tp_pct=5)
+    strategy_cls, _ = get_strategy("rsi")
     with pytest.raises(ValueError):
-        RSIStrategy(cfg)
+        strategy_cls(cfg)

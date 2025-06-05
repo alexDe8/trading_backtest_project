@@ -21,14 +21,7 @@ from trading_backtest.optimize import (
     VolExpansionParamSpace,
     check_sl_tp,
 )
-from trading_backtest.strategy.sma import SMACrossoverStrategy
-from trading_backtest.strategy.rsi import RSIStrategy
-from trading_backtest.strategy.breakout import BreakoutStrategy
-from trading_backtest.strategy.bollinger import BollingerBandStrategy
-from trading_backtest.strategy.momentum import (
-    MomentumImpulseStrategy,
-    VolatilityExpansionStrategy,
-)
+from trading_backtest.strategy import get_strategy
 from trading_backtest.config import (
     SMAConfig,
     RSIConfig,
@@ -76,7 +69,7 @@ def test_generate_trades_runs():
     # Variante: puoi anche parametrizzare con pytest.mark.parametrize come nel test di Codex!
     configs = [
         (
-            SMACrossoverStrategy,
+            "sma",
             SMAConfig(
                 sma_fast=5,
                 sma_slow=10,
@@ -87,67 +80,55 @@ def test_generate_trades_runs():
                 trailing_stop_pct=1,
             ),
         ),
+        ("rsi", RSIConfig(period=14, oversold=30, sl_pct=1, tp_pct=2)),
         (
-            RSIStrategy,
-            RSIConfig(period=14, oversold=30, sl_pct=1, tp_pct=2),
-        ),
-        (
-            BreakoutStrategy,
+            "breakout",
             BreakoutConfig(
-                lookback=20, atr_period=14, atr_mult=1.0, sl_pct=1, tp_pct=2
+                lookback=20,
+                atr_period=14,
+                atr_mult=1.0,
+                sl_pct=1,
+                tp_pct=2,
             ),
         ),
+        ("bollinger", BollingerConfig(period=20, nstd=2.0, sl_pct=1, tp_pct=2)),
+        ("momentum", MomentumConfig(window=10, threshold=0, sl_pct=1, tp_pct=2)),
         (
-            BollingerBandStrategy,
-            BollingerConfig(period=20, nstd=2.0, sl_pct=1, tp_pct=2),
-        ),
-        (
-            MomentumImpulseStrategy,
-            MomentumConfig(window=10, threshold=0, sl_pct=1, tp_pct=2),
-        ),
-        (
-            VolatilityExpansionStrategy,
-            VolExpansionConfig(
-                vol_window=20, vol_threshold=0.4, sl_pct=1, tp_pct=2
-            ),
+            "vol_expansion",
+            VolExpansionConfig(vol_window=20, vol_threshold=0.4, sl_pct=1, tp_pct=2),
         ),
     ]
     df = _dummy_df()
-    for strategy_cls, cfg in configs:
+    for name, cfg in configs:
+        strategy_cls, _ = get_strategy(name)
         strat = strategy_cls(cfg)
         trades = strat.generate_trades(df)
         assert isinstance(trades, pd.DataFrame)
 
+
 def test_optimize_instantiates_strategies():
     df = _dummy_df()
     configs = [
-        (SMACrossoverStrategy, SMAConfig, SMAParamSpace(), prune_sma),
-        (RSIStrategy, RSIConfig, RSIParamSpace(), prune_rsi),
-        (BreakoutStrategy, BreakoutConfig, BreakoutParamSpace(), prune_breakout),
+        ("sma", SMAConfig, SMAParamSpace(), prune_sma),
+        ("rsi", RSIConfig, RSIParamSpace(), prune_rsi),
+        ("breakout", BreakoutConfig, BreakoutParamSpace(), prune_breakout),
+        ("bollinger", BollingerConfig, BollingerParamSpace(), prune_bollinger),
+        ("momentum", MomentumConfig, MomentumParamSpace(), prune_momentum),
         (
-            BollingerBandStrategy,
-            BollingerConfig,
-            BollingerParamSpace(),
-            prune_bollinger,
-        ),
-        (
-            MomentumImpulseStrategy,
-            MomentumConfig,
-            MomentumParamSpace(),
-            prune_momentum,
-        ),
-        (
-            VolatilityExpansionStrategy,
+            "vol_expansion",
             VolExpansionConfig,
             VolExpansionParamSpace(),
             prune_vol_expansion,
         ),
     ]
-    for cls, cfg_cls, space, prune in configs:
-        optimize_with_optuna(df, cls, cfg_cls, space, prune_logic=prune, n_trials=1)
+    for name, cfg_cls, space, prune in configs:
+        strategy_cls, _ = get_strategy(name)
+        optimize_with_optuna(
+            df, strategy_cls, cfg_cls, space, prune_logic=prune, n_trials=1
+        )
+
 
 def test_check_sl_tp_pruning():
     check_sl_tp({"sl_pct": 5, "tp_pct": 10})
     with pytest.raises(optuna.TrialPruned):
         check_sl_tp({"sl_pct": 10, "tp_pct": 5})
-
