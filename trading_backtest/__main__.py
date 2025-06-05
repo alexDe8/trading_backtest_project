@@ -14,6 +14,7 @@ from .config import (
     BollingerConfig,
     MomentumConfig,
     VolExpansionConfig,
+    RandomForestConfig,
 )
 from .data import load_price_data, add_indicator_cache
 from .utils.io_utils import save_csv
@@ -36,8 +37,9 @@ from .strategy.rsi import RSIStrategy
 from .strategy.breakout import BreakoutStrategy
 from .strategy.bollinger import BollingerBandStrategy
 from .strategy.momentum import MomentumImpulseStrategy, VolatilityExpansionStrategy
+from .strategy.random_forest import RandomForestStrategy
 
-
+# STRATEGY_REGISTRY dinamico (per CLI)
 STRATEGY_REGISTRY = {
     "sma": (
         SMACrossoverStrategy,
@@ -75,13 +77,18 @@ STRATEGY_REGISTRY = {
         PARAM_SPACES["vol_expansion"],
         prune_vol_expansion,
     ),
+    "random_forest": (
+        RandomForestStrategy,
+        RandomForestConfig,
+        PARAM_SPACES.get("random_forest", {}),  # Se hai il param space anche per RF
+        lambda params: None,  # Prune function dummy o la tua logica ML
+    ),
 }
 
-
-def create_reference_strategies(df: pd.DataFrame):
+def create_reference_strategies(df: pd.DataFrame, include_ml: bool = False):
     """Return list of (name, strategy_instance) tuples."""
     vol_thr = df["vol_50"].quantile(0.80)
-    return [
+    strategies = [
         (
             "RSI",
             RSIStrategy(RSIConfig(period=14, oversold=30, sl_pct=7, tp_pct=20)),
@@ -122,15 +129,28 @@ def create_reference_strategies(df: pd.DataFrame):
             ),
         ),
     ]
-
+    if include_ml:
+        strategies.append(
+            (
+                "RandomForest",
+                RandomForestStrategy(
+                    RandomForestConfig(
+                        entry_threshold=0.55,
+                        exit_threshold=0.45,
+                        sl_pct=7,
+                        tp_pct=20,
+                    )
+                ),
+            )
+        )
+    return strategies
 
 def run_reference_strategy(df: pd.DataFrame, strategy_instance) -> float:
     """Return total return for a given strategy instance."""
     trades = strategy_instance.generate_trades(df)
     return PerformanceAnalyzer(trades).total_return()
 
-
-def main() -> None:
+def main(with_ml: bool = False) -> None:
     parser = argparse.ArgumentParser(description="Run trading backtest")
     parser.add_argument(
         "--strategy",
@@ -171,7 +191,7 @@ def main() -> None:
         log.info("Grid SMA salvato in %s", RESULTS_FILE)
 
     # 3) Strategie di riferimento ------------------------------------------
-    ref_strategies = create_reference_strategies(df)
+    ref_strategies = create_reference_strategies(df, include_ml=with_ml)
     other = [
         {
             "strategy": name,
@@ -187,4 +207,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_ml = os.getenv("RUN_ML", "0") == "1"
+    main(with_ml=run_ml)

@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 import logging
+from dataclasses import dataclass
+from typing import Optional
 
 # Usa variabile d'ambiente se disponibile, altrimenti path relativo al progetto
 DATA_FILE = Path(os.environ.get("DATA_FILE", "data/btc_15m_data_2018_to_2025.csv"))
@@ -15,9 +17,6 @@ logging.basicConfig(
     force=True,
 )
 log = logging.getLogger("trading_backtest")
-
-from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -88,3 +87,13 @@ class StochasticConfig:
     oversold: int
     sl_pct: float
     tp_pct: float
+
+
+@dataclass
+class RandomForestConfig:
+    entry_threshold: float
+    exit_threshold: float
+    sl_pct: float
+    tp_pct: float
+    n_estimators: int = 100
+
