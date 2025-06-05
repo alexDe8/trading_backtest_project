@@ -4,6 +4,8 @@ from ..config import BollingerConfig
 
 
 class BollingerBandStrategy(BaseStrategy):
+    """Mean-reversion strategy based on Bollinger Bands."""
+
     def __init__(self, config: BollingerConfig):
         super().__init__(config.sl_pct, config.tp_pct)
         self.p, self.n = config.period, config.nstd

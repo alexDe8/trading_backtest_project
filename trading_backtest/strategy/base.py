@@ -8,6 +8,8 @@ import pandas as pd
 
 @dataclass
 class Trade:
+    """Simple representation of a single trade."""
+
     entry_time: Any
     exit_time: Any
     entry: float
