@@ -36,7 +36,7 @@ from .performance import PerformanceAnalyzer
 
 
 def benchmark_strategies(
-    df: pd.DataFrame, n_trials: int = 50, with_ml: bool = True
+    df: pd.DataFrame, n_trials: int = 300, with_ml: bool = True
 ) -> pd.DataFrame:
     """Optimize each classical strategy then evaluate on ``df``.
 
@@ -95,9 +95,12 @@ def benchmark_strategies(
         trial = optimize_with_optuna(
             df, cls, cfg_cls, space, prune_logic=prune, n_trials=n_trials
         )
-        cfg = cfg_cls(**trial.params)
-        trades = cls(cfg).generate_trades(df)
-        ret = PerformanceAnalyzer(trades).total_return()
+        try:
+            cfg = cfg_cls(**trial.params)
+            trades = cls(cfg).generate_trades(df)
+            ret = PerformanceAnalyzer(trades).total_return()
+        except ValueError:
+            ret = 0.0
         results.append({"strategy": name, "total_return": ret})
 
     # Machine learning strategy is not optimized here
