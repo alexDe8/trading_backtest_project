@@ -30,7 +30,7 @@ class RandomForestStrategy(BaseStrategy):
             df["ret_1"] = df["close"].pct_change().fillna(0)
             feature_cols = ["ret_1"]
 
-        X = df[feature_cols].fillna(method="bfill").fillna(method="ffill").fillna(0)
+        X = df[feature_cols].bfill().ffill().fillna(0)
         print(f"[DEBUG] RandomForest feature cols: {feature_cols}")
         y = (df["close"].shift(-1) > df["close"]).astype(int)
 
