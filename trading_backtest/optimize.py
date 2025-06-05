@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
-from typing import Any, Callable
+from typing import Any, Callable, Mapping
 from dataclasses import dataclass, fields
+import dataclasses
 import pandas as pd
 import optuna
 from tqdm import tqdm
 from .performance import PerformanceAnalyzer
+from .data import add_indicator_cache
 from .config import (
     log,
     SMAConfig,
@@ -155,6 +157,142 @@ def gather_indicator_periods(strategy_name: str) -> dict[str, list[int]]:
         res["vol"].update(_int_values(ps.vol_window))
 
     return {k: sorted(v) for k, v in res.items() if v}
+
+
+def _value_list(value: Any) -> list[int]:
+    """Return all integer values encoded by ``value``.
+
+    This expands parameter space tuples like ``("int", 5, 10, 2)`` or
+    ``("cat", [10, 20, None])`` as well as plain integers or iterables of
+    integers.  ``None`` values are ignored.
+    """
+
+    if value is None:
+        return []
+    if isinstance(value, tuple):
+        kind, *rest = value
+        if kind == "int":
+            low, high, *opt = rest
+            step = opt[0] if opt else 1
+            return list(range(low, high + 1, step))
+        if kind == "cat":
+            return [v for v in rest[0] if isinstance(v, int)]
+        return []
+    if isinstance(value, (list, set, tuple)):
+        return [v for v in value if isinstance(v, int)]
+    if isinstance(value, int):
+        return [value]
+    return []
+
+
+def gather_all_indicator_periods(params: Any) -> dict[str, list[int]]:
+    """Return indicator windows required by a parameter space or grid list."""
+
+    res: dict[str, set[int]] = {
+        "sma": set(),
+        "rsi": set(),
+        "atr": set(),
+        "vol": set(),
+        "imp": set(),
+        "hmax": set(),
+        "bb": set(),
+    }
+
+    def process(p: Mapping[str, Any]) -> None:
+        # Determine strategy to disambiguate ``period``
+        strat = None
+        if any(k.startswith("sma_") for k in p):
+            strat = "sma"
+        elif "nstd" in p:
+            strat = "bollinger"
+        elif "vol_threshold" in p:
+            strat = "vol_expansion"
+        elif "threshold" in p and "window" in p:
+            strat = "momentum"
+        elif "lookback" in p or "atr_period" in p:
+            strat = "breakout"
+        elif (
+            "oversold" in p
+            and "period" in p
+            and not {"k_period", "d_period"} & p.keys()
+        ):
+            strat = "rsi"
+
+        for name, val in p.items():
+            vals = _value_list(val)
+            if name in {"sma_fast", "sma_slow", "sma_trend"}:
+                res["sma"].update(vals)
+            elif name == "period":
+                if strat == "rsi":
+                    res["rsi"].update(vals)
+                elif strat == "bollinger":
+                    res["bb"].update(vals)
+            elif name == "lookback":
+                res["hmax"].update(vals)
+            elif name == "atr_period":
+                res["atr"].update(vals)
+            elif name == "window":
+                res["imp"].update(vals)
+            elif name == "vol_window":
+                res["vol"].update(vals)
+
+    if isinstance(params, list):
+        for d in params:
+            process(d)
+    elif dataclasses.is_dataclass(params):
+        process({f.name: getattr(params, f.name) for f in dataclasses.fields(params)})
+    elif isinstance(params, Mapping):
+        process(params)
+    else:
+        raise TypeError("Unsupported parameter container")
+
+    for v in res.values():
+        v.discard(None)
+    return {k: sorted(v) for k, v in res.items() if v}
+
+
+def ensure_indicator_cache(df: pd.DataFrame, params: Any) -> dict[str, list[int]]:
+    """Populate indicator columns based on ``params`` and validate their presence."""
+
+    periods = gather_all_indicator_periods(params)
+    add_indicator_cache(
+        df,
+        sma=periods.get("sma", []),
+        rsi=periods.get("rsi", []),
+        atr=periods.get("atr", []),
+        vol=periods.get("vol", []),
+        imp=periods.get("imp", []),
+        hmax=periods.get("hmax", []),
+        bb=periods.get("bb", []),
+    )
+
+    missing = []
+    for p in periods.get("sma", []):
+        if f"sma_{p}" not in df:
+            missing.append(f"sma_{p}")
+    for p in periods.get("rsi", []):
+        if f"rsi_{p}" not in df:
+            missing.append(f"rsi_{p}")
+    for p in periods.get("atr", []):
+        if f"atr_{p}" not in df:
+            missing.append(f"atr_{p}")
+    for p in periods.get("vol", []):
+        if f"vol_{p}" not in df:
+            missing.append(f"vol_{p}")
+    for p in periods.get("imp", []):
+        if f"impulse_{p}" not in df:
+            missing.append(f"impulse_{p}")
+    for p in periods.get("hmax", []):
+        if f"hmax_{p}" not in df:
+            missing.append(f"hmax_{p}")
+    for p in periods.get("bb", []):
+        if f"bbm_{p}" not in df or f"bbs_{p}" not in df:
+            missing.append(f"bb_{p}")
+
+    if missing:
+        raise KeyError(f"Colonne mancanti: {', '.join(missing)}")
+
+    return periods
 
 
 # ---------------------- SUGGEST UNIVERSALE ---------------------------
