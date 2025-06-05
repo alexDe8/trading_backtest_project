@@ -1,6 +1,6 @@
 import pandas as pd
 from .base import BaseStrategy
-from ..config import StochasticConfig
+from ..config import StochasticConfig, log
 
 
 class StochasticStrategy(BaseStrategy):
@@ -15,8 +15,8 @@ class StochasticStrategy(BaseStrategy):
         high_n = df["high"].rolling(self.config.k_period).max().shift(1)
         df["k"] = (df["close"] - low_n) / (high_n - low_n) * 100
         df["d"] = df["k"].rolling(self.config.d_period).mean().shift(1)
-        print(
-            f"[DEBUG] Stochastic k_period={self.config.k_period}, d_period={self.config.d_period}"
+        log.debug(
+            f"Stochastic k_period={self.config.k_period}, d_period={self.config.d_period}"
         )
         return df
 

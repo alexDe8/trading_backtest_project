@@ -1,6 +1,6 @@
 import pandas as pd
 from .base import BaseStrategy
-from ..config import RSIConfig
+from ..config import RSIConfig, log
 
 
 class RSIStrategy(BaseStrategy):
@@ -15,9 +15,9 @@ class RSIStrategy(BaseStrategy):
         if col not in df.columns:
             raise KeyError(f"Colonna {col} mancante")
         if df[col].isna().all():
-            print(f"[DEBUG] Colonna {col} tutta NaN!")
+            log.debug(f"Colonna {col} tutta NaN!")
         else:
-            print(f"[DEBUG] Colonna {col} OK. Stats:\n{df[col].describe()}")
+            log.debug(f"Colonna {col} OK. Stats:\n{df[col].describe()}")
         df["r"] = df[col]
         return df
 
