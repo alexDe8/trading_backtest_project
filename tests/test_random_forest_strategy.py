@@ -7,13 +7,15 @@ from trading_backtest.config import RandomForestConfig
 
 def _dummy_df():
     n = 30
-    df = pd.DataFrame({
-        "timestamp": pd.date_range("2020-01-01", periods=n, freq="T"),
-        "open": np.linspace(1, n, n),
-        "high": np.linspace(1, n, n) + 0.5,
-        "low": np.linspace(1, n, n) - 0.5,
-        "close": np.linspace(1, n, n),
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2020-01-01", periods=n, freq="T"),
+            "open": np.linspace(1, n, n),
+            "high": np.linspace(1, n, n) + 0.5,
+            "low": np.linspace(1, n, n) - 0.5,
+            "close": np.linspace(1, n, n),
+        }
+    )
     for w in [5, 10]:
         df[f"sma_{w}"] = df["close"]
     df["rsi_14"] = 50

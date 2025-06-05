@@ -99,4 +99,3 @@ class RandomForestConfig:
     max_depth: Optional[int] = None
     sl_pct: float = 5
     tp_pct: float = 10
-

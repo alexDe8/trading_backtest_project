@@ -71,14 +71,36 @@ def _dummy_df() -> pd.DataFrame:
 
 def test_generate_trades_runs():
     configs = [
-        ("sma", SMAConfig(sma_fast=5, sma_slow=10, sma_trend=20, sl_pct=1, tp_pct=2, position_size=1, trailing_stop_pct=1)),
+        (
+            "sma",
+            SMAConfig(
+                sma_fast=5,
+                sma_slow=10,
+                sma_trend=20,
+                sl_pct=1,
+                tp_pct=2,
+                position_size=1,
+                trailing_stop_pct=1,
+            ),
+        ),
         ("rsi", RSIConfig(period=14, oversold=30, sl_pct=1, tp_pct=2)),
-        ("breakout", BreakoutConfig(lookback=20, atr_period=14, atr_mult=1.0, sl_pct=1, tp_pct=2)),
+        (
+            "breakout",
+            BreakoutConfig(
+                lookback=20, atr_period=14, atr_mult=1.0, sl_pct=1, tp_pct=2
+            ),
+        ),
         ("bollinger", BollingerConfig(period=20, nstd=2.0, sl_pct=1, tp_pct=2)),
         ("momentum", MomentumConfig(window=10, threshold=0, sl_pct=1, tp_pct=2)),
-        ("vol_expansion", VolExpansionConfig(vol_window=20, vol_threshold=0.4, sl_pct=1, tp_pct=2)),
+        (
+            "vol_expansion",
+            VolExpansionConfig(vol_window=20, vol_threshold=0.4, sl_pct=1, tp_pct=2),
+        ),
         ("macd", MACDConfig(fast=12, slow=26, signal=9, sl_pct=1, tp_pct=2)),
-        ("stochastic", StochasticConfig(k_period=14, d_period=3, oversold=20, sl_pct=1, tp_pct=2)),
+        (
+            "stochastic",
+            StochasticConfig(k_period=14, d_period=3, oversold=20, sl_pct=1, tp_pct=2),
+        ),
     ]
     df = _dummy_df()
     for name, cfg in configs:
@@ -96,17 +118,23 @@ def test_optimize_instantiates_strategies():
         ("breakout", BreakoutConfig, BreakoutParamSpace(), prune_breakout),
         ("bollinger", BollingerConfig, BollingerParamSpace(), prune_bollinger),
         ("momentum", MomentumConfig, MomentumParamSpace(), prune_momentum),
-        ("vol_expansion", VolExpansionConfig, VolExpansionParamSpace(), prune_vol_expansion),
+        (
+            "vol_expansion",
+            VolExpansionConfig,
+            VolExpansionParamSpace(),
+            prune_vol_expansion,
+        ),
         ("macd", MACDConfig, MACDParamSpace(), prune_macd),
         ("stochastic", StochasticConfig, StochasticParamSpace(), prune_stochastic),
     ]
     for name, cfg_cls, space, prune in configs:
         strategy_cls, _ = get_strategy(name)
-        optimize_with_optuna(df, strategy_cls, cfg_cls, space, prune_logic=prune, n_trials=1)
+        optimize_with_optuna(
+            df, strategy_cls, cfg_cls, space, prune_logic=prune, n_trials=1
+        )
 
 
 def test_check_sl_tp_pruning():
     check_sl_tp({"sl_pct": 5, "tp_pct": 10})
     with pytest.raises(optuna.TrialPruned):
         check_sl_tp({"sl_pct": 10, "tp_pct": 5})
-
