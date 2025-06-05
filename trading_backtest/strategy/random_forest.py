@@ -30,7 +30,6 @@ class RandomForestStrategy(BaseStrategy):
             df["ret_1"] = df["close"].pct_change().fillna(0)
             feature_cols = ["ret_1"]
 
-        codex/replace-print-with-log.debug-in-strategy-modules
         X = df[feature_cols].fillna(method="bfill").fillna(method="ffill").fillna(0)
         log.debug(f"RandomForest feature cols: {feature_cols}")
 
