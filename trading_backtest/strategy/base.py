@@ -59,8 +59,9 @@ class BaseStrategy(ABC):
         in_pos = False
         trailing_sl = None
         trades: list[Trade] = []
-        for i, row in df.iterrows():
-            if (not in_pos) and entries.at[i]:
+        for row in df.itertuples():
+            idx = row.Index
+            if (not in_pos) and entries.at[idx]:
                 in_pos = True
                 e_price, sl_price, tp_price, trailing_sl, e_time, qty = (
                     self._open_trade(row)
@@ -68,9 +69,9 @@ class BaseStrategy(ABC):
                 continue
 
             if in_pos:
-                hit_sl = row["low"] <= sl_price
-                hit_tp = row["high"] >= tp_price
-                force_exit = exits.at[i]
+                hit_sl = row.low <= sl_price
+                hit_tp = row.high >= tp_price
+                force_exit = exits.at[idx]
 
                 if hit_sl or hit_tp or force_exit:
                     trade = self._close_trade(
@@ -98,9 +99,9 @@ class BaseStrategy(ABC):
 
     # ---------------- metodi interni ----------------------
     def _open_trade(
-        self, row: pd.Series
+        self, row: Any
     ) -> tuple[float, float, float, float | None, Any, float]:
-        e_price = row["close"]
+        e_price = row.close
         sl_price = e_price * (1 - self.sl_pct / 100)
         tp_price = e_price * (1 + self.tp_pct / 100)
         trailing_sl = None
@@ -108,15 +109,15 @@ class BaseStrategy(ABC):
             trailing_sl = e_price * (1 - self.trailing_stop_pct / 100)
             sl_price = max(sl_price, trailing_sl)
         qty = getattr(self, "position_size", 1)
-        return e_price, sl_price, tp_price, trailing_sl, row["timestamp"], qty
+        return e_price, sl_price, tp_price, trailing_sl, row.timestamp, qty
 
     def _update_trailing_stop(
-        self, row: pd.Series, sl_price: float, trailing_sl: float | None
+        self, row: Any, sl_price: float, trailing_sl: float | None
     ) -> tuple[float, float | None]:
         if not self.trailing_stop_pct:
             return sl_price, trailing_sl
 
-        new_trail = row["high"] * (1 - self.trailing_stop_pct / 100)
+        new_trail = row.high * (1 - self.trailing_stop_pct / 100)
         if trailing_sl is None or new_trail > trailing_sl:
             trailing_sl = new_trail
         if trailing_sl is not None and trailing_sl > sl_price:
@@ -125,7 +126,7 @@ class BaseStrategy(ABC):
 
     def _close_trade(
         self,
-        row: pd.Series,
+        row: Any,
         e_time: Any,
         e_price: float,
         sl_price: float,
@@ -134,10 +135,10 @@ class BaseStrategy(ABC):
         hit_tp: bool,
         qty: float,
     ) -> Trade:
-        x_price = sl_price if hit_sl else tp_price if hit_tp else row["close"]
+        x_price = sl_price if hit_sl else tp_price if hit_tp else row.close
         return Trade(
             entry_time=e_time,
-            exit_time=row["timestamp"],
+            exit_time=row.timestamp,
             entry=e_price,
             exit=x_price,
             qty=qty,
