@@ -49,8 +49,9 @@ generated DataFrame now includes a `qty` column with this value:
 
 ```python
 from trading_backtest.strategy.sma import SMACrossoverStrategy
+from trading_backtest.config import SMAConfig
 
-strat = SMACrossoverStrategy(
+cfg = SMAConfig(
     sma_fast=10,
     sma_slow=50,
     sma_trend=200,
@@ -59,6 +60,7 @@ strat = SMACrossoverStrategy(
     position_size=0.1,
     trailing_stop_pct=2.0,
 )
+strat = SMACrossoverStrategy(cfg)
 trades = strat.generate_trades(df)
 ```
 
