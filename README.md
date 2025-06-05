@@ -49,3 +49,19 @@ trades = strat.generate_trades(df)
 
 For strategies without the `position_size` parameter, `qty` defaults to `1`.
 
+## Command line interface
+
+The package exposes a small CLI. You can run the optimiser directly using the
+module or `run.py` and configure data path, strategy and number of trials:
+
+```bash
+# optimise the RSI strategy using custom data
+python -m trading_backtest --data /path/to/data.csv --strategy rsi --trials 100
+
+# equivalent invocation via the helper script
+python run.py --strategy breakout --trials 200
+```
+
+Running the module without arguments defaults to the SMA strategy and uses the
+`DATA_FILE` environment variable when set.
+

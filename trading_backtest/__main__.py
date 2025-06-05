@@ -1,4 +1,6 @@
 from __future__ import annotations
+import argparse
+from pathlib import Path
 import pandas as pd
 
 from .config import (
@@ -19,6 +21,11 @@ from .optimize import (
     optimize_with_optuna,
     PARAM_SPACES,
     prune_sma,
+    prune_rsi,
+    prune_breakout,
+    prune_bollinger,
+    prune_momentum,
+    prune_vol_expansion,
     refined_sma_grid,
     grid_search,
 )
@@ -31,15 +38,35 @@ from .strategy.bollinger import BollingerBandStrategy
 from .strategy.momentum import MomentumImpulseStrategy, VolatilityExpansionStrategy
 
 
+STRATEGY_MAP = {
+    "sma": (SMACrossoverStrategy, SMAConfig, prune_sma),
+    "rsi": (RSIStrategy, RSIConfig, prune_rsi),
+    "breakout": (BreakoutStrategy, BreakoutConfig, prune_breakout),
+    "bollinger": (BollingerBandStrategy, BollingerConfig, prune_bollinger),
+    "momentum": (MomentumImpulseStrategy, MomentumConfig, prune_momentum),
+    "vol_expansion": (
+        VolatilityExpansionStrategy,
+        VolExpansionConfig,
+        prune_vol_expansion,
+    ),
+}
+
+
 def run_reference_strategy(df: pd.DataFrame, strategy_instance) -> float:
     """Return total return for a given strategy instance."""
     trades = strategy_instance.generate_trades(df)
     return PerformanceAnalyzer(trades).total_return()
 
 
-def main() -> None:
+def main(
+    data_file: Path = DATA_FILE,
+    strategy: str = "sma",
+    n_trials: int = 300,
+) -> None:
+    """Run the optimisation for the chosen strategy."""
+
     # 1) Dati + indicatori -------------------------------------------------
-    df = load_price_data(DATA_FILE)
+    df = load_price_data(data_file)
     add_indicator_cache(
         df,
         sma=list(range(5, 251)) + [300, 400],
@@ -48,67 +75,45 @@ def main() -> None:
         vol=[20, 50],
         imp=[5, 10],
     )
-    # 2) Optuna (modulare!) ------------------------------------------------
+    # 2) Optuna -------------------------------------------------------------
+    strat_cls, cfg_cls, prune_fn = STRATEGY_MAP[strategy]
     best_trial = optimize_with_optuna(
         df,
-        SMACrossoverStrategy,
-        SMAConfig,
-        PARAM_SPACES["sma"],
-        prune_logic=prune_sma,
-        n_trials=300,
-    )
-    sma_grid = refined_sma_grid(best_trial.params)
-    grid_df = grid_search(df, sma_grid)
-    save_csv(grid_df, RESULTS_FILE)
-    log.info("Grid SMA salvato in %s", RESULTS_FILE)
-
-    # 3) Strategie di riferimento ------------------------------------------
-    other = []
-    other.append(
-        {
-            "strategy": "RSI",
-            "total_return": run_reference_strategy(df, RSIStrategy(14, 30, 7, 20)),
-        }
-    )
-    other.append(
-        {
-            "strategy": "Breakout",
-            "total_return": run_reference_strategy(
-                df, BreakoutStrategy(55, 14, 1.0, 7, 20)
-            ),
-        }
-    )
-    vol_thr = df["vol_50"].quantile(0.80)
-    other.append(
-        {
-            "strategy": "VolExpansion",
-            "total_return": run_reference_strategy(
-                df, VolatilityExpansionStrategy(50, vol_thr, 7, 20)
-            ),
-        }
-    )
-    other.append(
-        {
-            "strategy": "Bollinger",
-            "total_return": run_reference_strategy(
-                df, BollingerBandStrategy(20, 2.0, 7, 15)
-            ),
-        }
-    )
-    other.append(
-        {
-            "strategy": "Momentum",
-            "total_return": run_reference_strategy(
-                df, MomentumImpulseStrategy(10, 0.02, 7, 20)
-            ),
-        }
+        strat_cls,
+        cfg_cls,
+        PARAM_SPACES[strategy],
+        prune_logic=prune_fn,
+        n_trials=n_trials,
     )
 
-    summary = pd.DataFrame(other).sort_values("total_return", ascending=False)
-    save_csv(summary, SUMMARY_FILE)
-    log.info("Riepilogo strategie salvato in %s", SUMMARY_FILE)
-    log.info("=== PERFORMANCE ===\n%s", summary.to_string(index=False))
+    if strategy == "sma":
+        sma_grid = refined_sma_grid(best_trial.params)
+        grid_df = grid_search(df, sma_grid)
+        save_csv(grid_df, RESULTS_FILE)
+        log.info("Grid SMA salvato in %s", RESULTS_FILE)
+
+    log.info("Best parameters for %s: %s", strategy, best_trial.params)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Trading Backtest CLI")
+    parser.add_argument(
+        "--data",
+        type=Path,
+        default=DATA_FILE,
+        help="Path to CSV with price data",
+    )
+    parser.add_argument(
+        "--strategy",
+        choices=STRATEGY_MAP.keys(),
+        default="sma",
+        help="Which strategy to optimise",
+    )
+    parser.add_argument(
+        "--trials",
+        type=int,
+        default=300,
+        help="Number of Optuna trials",
+    )
+    args = parser.parse_args()
+    main(data_file=args.data, strategy=args.strategy, n_trials=args.trials)
