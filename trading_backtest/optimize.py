@@ -93,42 +93,43 @@ def suggest(trial, param_info, name=None):
 
 
 # ---------------------- PRUNE -----------------------------
+def check_sl_tp(params: dict[str, Any]) -> None:
+    """Raise :class:`optuna.TrialPruned` when stop loss is not less than take profit."""
+
+    if params["sl_pct"] >= params["tp_pct"]:
+        raise optuna.TrialPruned()
+
+
 def prune_sma(params, trial):
     """Prune trials where SMA parameters are inconsistent."""
+    check_sl_tp(params)
     if params["sma_fast"] >= params["sma_slow"]:
-        raise optuna.TrialPruned()
-    if params["sl_pct"] >= params["tp_pct"]:
         raise optuna.TrialPruned()
 
 
 def prune_rsi(params, trial):
     """Prune RSI trials with invalid stop or take-profit."""
-    if params["sl_pct"] >= params["tp_pct"]:
-        raise optuna.TrialPruned()
+    check_sl_tp(params)
 
 
 def prune_breakout(params, trial):
     """Prune breakout trials with invalid stop or take-profit."""
-    if params["sl_pct"] >= params["tp_pct"]:
-        raise optuna.TrialPruned()
+    check_sl_tp(params)
 
 
 def prune_bollinger(params, trial):
     """Prune Bollinger trials with invalid stop or take-profit."""
-    if params["sl_pct"] >= params["tp_pct"]:
-        raise optuna.TrialPruned()
+    check_sl_tp(params)
 
 
 def prune_momentum(params, trial):
     """Prune momentum trials with invalid stop or take-profit."""
-    if params["sl_pct"] >= params["tp_pct"]:
-        raise optuna.TrialPruned()
+    check_sl_tp(params)
 
 
 def prune_vol_expansion(params, trial):
     """Prune volatility expansion trials with invalid stop or take-profit."""
-    if params["sl_pct"] >= params["tp_pct"]:
-        raise optuna.TrialPruned()
+    check_sl_tp(params)
 
 
 # ---------------------- STRATEGY EVALUATION -----------------------------

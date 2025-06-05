@@ -1,8 +1,10 @@
 import pathlib
 import sys
 
+import optuna
 import pandas as pd
 import numpy as np
+import pytest
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
@@ -15,6 +17,7 @@ from trading_backtest.optimize import (
     prune_bollinger,
     prune_momentum,
     prune_vol_expansion,
+    check_sl_tp,
 )
 from trading_backtest.strategy.sma import SMACrossoverStrategy
 from trading_backtest.strategy.rsi import RSIStrategy
@@ -100,3 +103,9 @@ def test_optimize_instantiates_strategies():
     ]
     for cls, cfg_cls, space, prune in configs:
         optimize_with_optuna(df, cls, cfg_cls, space, prune_logic=prune, n_trials=1)
+
+
+def test_check_sl_tp_pruning():
+    check_sl_tp({"sl_pct": 5, "tp_pct": 10})
+    with pytest.raises(optuna.TrialPruned):
+        check_sl_tp({"sl_pct": 10, "tp_pct": 5})
