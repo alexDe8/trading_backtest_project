@@ -114,6 +114,49 @@ PARAM_SPACES = {
 }
 
 
+def _int_values(param: tuple) -> list[int]:
+    """Return all integer values represented by ``param``."""
+
+    t, low, high, *rest = param
+    if t != "int":
+        return []
+    step = rest[0] if rest else 1
+    return list(range(low, high + 1, step))
+
+
+def gather_indicator_periods(strategy_name: str) -> dict[str, list[int]]:
+    """Return indicator windows required by the strategy's parameter space."""
+
+    ps = PARAM_SPACES[strategy_name]
+    res: dict[str, set[int]] = {
+        "sma": set(),
+        "rsi": set(),
+        "atr": set(),
+        "vol": set(),
+        "imp": set(),
+        "hmax": set(),
+        "bb": set(),
+    }
+
+    if strategy_name == "sma":
+        res["sma"].update(_int_values(ps.sma_fast))
+        res["sma"].update(_int_values(ps.sma_slow))
+        res["sma"].update(v for v in ps.sma_trend[1] if isinstance(v, int))
+    elif strategy_name == "rsi":
+        res["rsi"].update(_int_values(ps.period))
+    elif strategy_name == "breakout":
+        res["hmax"].update(_int_values(ps.lookback))
+        res["atr"].update(_int_values(ps.atr_period))
+    elif strategy_name == "bollinger":
+        res["bb"].update(_int_values(ps.period))
+    elif strategy_name == "momentum":
+        res["imp"].update(_int_values(ps.window))
+    elif strategy_name == "vol_expansion":
+        res["vol"].update(_int_values(ps.vol_window))
+
+    return {k: sorted(v) for k, v in res.items() if v}
+
+
 # ---------------------- SUGGEST UNIVERSALE ---------------------------
 def suggest(trial, param_info, name=None):
     """Wrapper around Optuna suggest functions with basic validation."""
