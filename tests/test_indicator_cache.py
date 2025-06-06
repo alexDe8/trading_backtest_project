@@ -25,8 +25,12 @@ def test_add_indicator_cache_small_df():
     # RSI
     delta = expected["close"].diff()
     up, down = delta.clip(lower=0), -delta.clip(upper=0)
-    rs = up.rolling(w).mean() / down.replace(0, np.nan).rolling(w).mean()
-    expected[f"rsi_{w}"] = (100 - 100 / (1 + rs)).shift(1)
+    gain = up.rolling(w, min_periods=1).mean()
+    loss = down.rolling(w, min_periods=1).mean()
+    rs = gain / loss.replace(0, np.nan)
+    rsi_vals = 100 - 100 / (1 + rs)
+    rsi_vals = rsi_vals.bfill()
+    expected[f"rsi_{w}"] = rsi_vals.shift(1)
 
     # ATR and true range
     tr = np.maximum(

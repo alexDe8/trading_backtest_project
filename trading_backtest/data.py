@@ -82,13 +82,17 @@ def add_indicator_cache(
     for w in sma:
         cols[f"sma_{w}"] = df["close"].rolling(w).mean().shift(1)
 
-    # RSI
+    # RSI - start rolling early to reduce initial NaNs
     if rsi:
         delta = df["close"].diff()
         up, down = delta.clip(lower=0), -delta.clip(upper=0)
         for p in rsi:
-            rs = up.rolling(p).mean() / down.replace(0, np.nan).rolling(p).mean()
-            cols[f"rsi_{p}"] = (100 - 100 / (1 + rs)).shift(1)
+            gain = up.rolling(p, min_periods=1).mean()
+            loss = down.rolling(p, min_periods=1).mean()
+            rs = gain / loss.replace(0, np.nan)
+            rsi_vals = 100 - 100 / (1 + rs)
+            rsi_vals = rsi_vals.bfill()  # fill leading NaNs
+            cols[f"rsi_{p}"] = rsi_vals.shift(1)
 
     # ATR and true range
     if atr:
