@@ -18,7 +18,8 @@ class VolatilityExpansionStrategy(BaseStrategy):
             log.debug(f"Colonna {col} tutta NaN!")
         else:
             log.debug(f"Colonna {col} OK. Stats:\n{df[col].describe()}")
-        df["v"] = df[col]
+        v = df[col].bfill().ffill()
+        df["v"] = v
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:
