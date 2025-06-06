@@ -401,12 +401,27 @@ def prune_random_forest(params, trial):
 
 
 # ---------------------- STRATEGY EVALUATION -----------------------------
-def evaluate_strategy(df: pd.DataFrame, make_strategy: Callable[[], Any]) -> float:
-    """Return the total strategy return for the given dataframe."""
+def evaluate_strategy(
+    df: pd.DataFrame,
+    make_strategy: Callable[[], Any],
+    *,
+    with_sharpe: bool = False,
+) -> float:
+    """Return a score for the given strategy on ``df``.
+
+    When ``with_sharpe`` is ``True`` the score is the sum of the total return
+    and the Sharpe ratio computed by :class:`PerformanceAnalyzer`.  This can be
+    useful during optimization to favour strategies with a better risk/return
+    profile while remaining backward compatible when the flag is ``False``.
+    """
 
     strat = make_strategy()
     trades = strat.generate_trades(df)
-    return PerformanceAnalyzer(trades, commission=0.1, slippage=0.05).total_return()
+    pa = PerformanceAnalyzer(trades, commission=0.1, slippage=0.05)
+    score = pa.total_return()
+    if with_sharpe:
+        score += pa.sharpe_ratio()
+    return score
 
 
 # ---------------------- OBJECTIVE GENERICO ---------------------------
