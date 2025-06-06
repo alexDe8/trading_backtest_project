@@ -1,132 +1,83 @@
 # Trading Backtest Project
 
-## Data path
+Questo repository contiene un framework leggero per testare diverse strategie di trading su serie storiche di prezzo. I dati per il backtest sono letti da un file CSV, per impostazione predefinita `data/btc_15m_data_from_2021.csv` (variabile d'ambiente `DATA_FILE`).
 
-The project expects a CSV file with price data. If the environment variable
-`DATA_FILE` is not set, the default path is
-`data/btc_15m_data_from_2021.csv` relative to the project root. This file
-contains 15‑minute OHLC data from January&nbsp;2021 up to June&nbsp;2025. You can use a
-different location by setting `DATA_FILE` before running the program:
+## Mappa del progetto
 
-```bash
-export DATA_FILE=/path/to/your/data.csv
-python run.py  # or: python -m trading_backtest
+```
+trading_backtest_project/
+├── run.py
+├── AGENTS.md
+├── requirements.txt
+├── setup.sh
+├── trading_backtest/
+│   ├── __main__.py
+│   ├── benchmark.py
+│   ├── config.py
+│   ├── data.py
+│   ├── optimize.py
+│   ├── performance.py
+│   ├── strategy/
+│   │   ├── base.py
+│   │   ├── sma.py
+│   │   ├── rsi.py
+│   │   ├── breakout.py
+│   │   ├── bollinger.py
+│   │   ├── momentum.py
+│   │   ├── macd.py
+│   │   ├── stochastic.py
+│   │   └── random_forest.py
+│   └── utils/
+│       └── io_utils.py
+└── tests/
+    └── ...
 ```
 
-Alternatively, place the CSV file at the default location and simply run
-`python run.py` (or `python -m trading_backtest`).
+### Responsabilità dei moduli principali
 
-The repository already includes `data/btc_15m_data_from_2021.csv` with around
-155k rows. This CSV can be used for testing or replaced with your own dataset.
-It must include the following columns:
-
-| column     | description                            |
-|----------- |----------------------------------------|
-| `Open time`| timestamp of the 15 minute period       |
-| `Open`     | opening price                          |
-| `High`     | highest price within the period        |
-| `Low`      | lowest price within the period         |
-| `Close`    | closing price                          |
-| `Volume`   | traded volume                          |
-
-Column names need to match exactly; any extra columns are ignored. The loader
-converts `Open time` into a `timestamp` column internally.
+- **`run.py`**: semplice entrypoint che richiama `trading_backtest.__main__.main()`.
+- **`trading_backtest/__main__.py`**: gestisce la CLI (`--strategy`, `--trials`, `--benchmark`) e coordina caricamento dati, calcolo indicatori e ottimizzazione.
+- **`config.py`**: definisce percorsi, logging e dataclass con i parametri per ogni strategia.
+- **`data.py`**: funzioni per caricare il CSV e aggiungere al DataFrame gli indicatori tecnici utilizzati dalle strategie.
+- **`performance.py`**: classe `PerformanceAnalyzer` per metriche come total return, Sharpe ratio e drawdown.
+- **`optimize.py`**: definisce gli spazi di ricerca per Optuna e funzioni di valutazione/pruning delle strategie.
+- **`benchmark.py`**: lancia l'ottimizzazione di ciascuna strategia e produce un riepilogo dei risultati.
+- **`strategy/`**: contiene la classe astratta `BaseStrategy` e le varie implementazioni (SMA, RSI, Breakout, Bollinger, Momentum, MACD, Stochastic, RandomForest).
+- **`utils/io_utils.py`**: funzioni di supporto per la lettura/scrittura di CSV.
 
 ## Setup
 
-Before running the project or the test suite make sure all dependencies are
-installed:
+Assicurarsi di avere tutte le dipendenze installate:
 
 ```bash
 pip install -r requirements.txt
-# or use the helper script
+# oppure
 ./setup.sh
 ```
 
-## Strategy usage
+## Esecuzione
 
-Each strategy exposes a `generate_trades(df)` method. The SMA crossover strategy
-accepts an additional `position_size` parameter used to size trades. The
-generated DataFrame now includes a `qty` column with this value:
-
-```python
-from trading_backtest.strategy import get_strategy
-from trading_backtest.config import SMAConfig
-
-cfg = SMAConfig(
-    sma_fast=10,
-    sma_slow=50,
-    sma_trend=200,
-    sl_pct=5,
-    tp_pct=20,
-    position_size=0.1,
-    trailing_stop_pct=2.0,
-)
-strategy_cls, _ = get_strategy("sma")
-strat = strategy_cls(cfg)
-trades = strat.generate_trades(df)
-```
-
-For strategies without the `position_size` parameter, `qty` defaults to `1`.
-
-
-## Benchmark output
-
-Running `python run.py` generates a `summary_live.csv` file with the total return
-for each strategy. A simplified example of the table is shown below:
-
-| strategy      | total_return |
-|---------------|-------------:|
-| SMA           | 120.5        |
-| Bollinger     | 80.1         |
-| RandomForest  | 50.0         |
-
-## Command line option
-
-The main entry point supports selecting which strategy to optimize. Use
-`--strategy` or set the `STRATEGY` environment variable. Available values are
-`sma`, `rsi`, `breakout`, `bollinger`, `momentum` and `vol_expansion`. When the
-option is omitted, `sma` is used by default:
+Posizionare il file CSV dei prezzi nel percorso indicato (o impostare `DATA_FILE`). Esempio di avvio per ottimizzare la strategia SMA:
 
 ```bash
-python run.py --strategy rsi
-# or via environment variable
-STRATEGY=breakout python run.py
+python run.py --strategy sma --trials 100
 ```
 
-You can control how many Optuna trials are executed with `--trials` or the
-`TRIALS` environment variable. Use `--benchmark` (or `BENCHMARK=1`) to run a
-short optimization for all supported strategies instead of a single one.
+Per eseguire un benchmark veloce di tutte le strategie:
 
 ```bash
-# optimize only the RSI strategy with 100 trials
-python run.py --strategy rsi --trials 100
-
-# run the benchmark across all strategies
 python run.py --benchmark
-# or via environment variable
-BENCHMARK=1 python run.py
 ```
 
-To include the machine learning strategy in the benchmark, set the
-`RUN_ML` environment variable:
+Impostando la variabile `RUN_ML=1` viene inclusa anche la strategia RandomForest.
+
+## Sviluppo
+
+Prima di aprire una pull request formatta il codice con `black` e assicurati che i test passino:
 
 ```bash
-RUN_ML=1 python run.py --benchmark
-```
-
-## Development
-
-Format the codebase with `black` and run the test suite with `pytest`:
-
-```bash
-black trading_backtest/
+black trading_backtest tests
 pytest
 ```
 
-## Logging
-
-Adjust verbosity by setting the `LOG_LEVEL` environment variable (e.g. `DEBUG`,
-`INFO`, `WARNING`).
-
-
+La verbosità dei log è regolabile tramite l'ambiente `LOG_LEVEL`.
