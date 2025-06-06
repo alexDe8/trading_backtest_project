@@ -2,7 +2,7 @@ venv/
 __pycache__/
 *.pyc
 *.csv
-!data/btc_15m_data_2018_to_2025.csv
+!data/btc_15m_sample.csv
 *.log
 .DS_Store
 
