@@ -33,6 +33,7 @@ from .optimize import (
     prune_vol_expansion,
 )
 from .performance import PerformanceAnalyzer
+from .optimize import evaluate_strategy
 
 
 def benchmark_strategies(
@@ -97,11 +98,10 @@ def benchmark_strategies(
         )
         try:
             cfg = cfg_cls(**trial.params)
-            trades = cls(cfg).generate_trades(df)
-            ret = PerformanceAnalyzer(trades).total_return()
+            ret = evaluate_strategy(df, lambda cfg=cfg: cls(cfg), with_sharpe=True)
         except ValueError:
             ret = 0.0
-        results.append({"strategy": name, "total_return": ret})
+        results.append({"strategy": name, "score": ret})
 
     # Machine learning strategy is not optimized here
     if with_ml:
@@ -109,14 +109,13 @@ def benchmark_strategies(
             n_estimators=50, max_depth=None, sl_pct=5, tp_pct=10
         )
         rf = RandomForestStrategy(rf_cfg)
-        trades = rf.generate_trades(df)
         results.append(
             {
                 "strategy": "RandomForest",
-                "total_return": PerformanceAnalyzer(trades).total_return(),
+                "score": evaluate_strategy(df, lambda: rf, with_sharpe=True),
             }
         )
 
-    summary = pd.DataFrame(results).sort_values("total_return", ascending=False)
+    summary = pd.DataFrame(results).sort_values("score", ascending=False)
     save_csv(summary, SUMMARY_FILE)
     return summary
