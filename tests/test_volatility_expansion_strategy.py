@@ -16,7 +16,7 @@ def test_prepare_indicators_backfills_nan():
             "vol_20": [np.nan, np.nan, 0.6, 0.4, 0.7],
         }
     )
-    cfg = VolExpansionConfig(vol_window=20, vol_threshold=0.5, sl_pct=1, tp_pct=2)
+    cfg = VolExpansionConfig(vol_window=20, vol_threshold=0.01, sl_pct=1, tp_pct=2)
     strat = VolatilityExpansionStrategy(cfg)
     processed = strat.prepare_indicators(df.copy())
     assert not processed["v"].isna().any()
