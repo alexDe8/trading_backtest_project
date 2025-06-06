@@ -4,19 +4,21 @@
 
 The project expects a CSV file with price data. If the environment variable
 `DATA_FILE` is not set, the default path is
-`data/btc_15m_data_2018_to_2025.csv` relative to the project root. You can use a
+`data/btc_15m_data_from_2021.csv` relative to the project root. This file
+contains 15‑minute OHLC data from January&nbsp;2021 up to June&nbsp;2025. You can use a
 different location by setting `DATA_FILE` before running the program:
 
 ```bash
 export DATA_FILE=/path/to/your/data.csv
-python run.py
+python run.py  # or: python -m trading_backtest
 ```
 
 Alternatively, place the CSV file at the default location and simply run
-`python run.py`.
+`python run.py` (or `python -m trading_backtest`).
 
-A small synthetic dataset is provided in the `data/` directory for testing
-purposes. The CSV must include the following columns:
+The repository already includes `data/btc_15m_data_from_2021.csv` with around
+155k rows. This CSV can be used for testing or replaced with your own dataset.
+It must include the following columns:
 
 | column     | description                            |
 |----------- |----------------------------------------|
@@ -105,5 +107,26 @@ python run.py --benchmark
 # or via environment variable
 BENCHMARK=1 python run.py
 ```
+
+To include the machine learning strategy in the benchmark, set the
+`RUN_ML` environment variable:
+
+```bash
+RUN_ML=1 python run.py --benchmark
+```
+
+## Development
+
+Format the codebase with `black` and run the test suite with `pytest`:
+
+```bash
+black trading_backtest/
+pytest
+```
+
+## Logging
+
+Adjust verbosity by setting the `LOG_LEVEL` environment variable (e.g. `DEBUG`,
+`INFO`, `WARNING`).
 
 
