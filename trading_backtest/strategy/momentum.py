@@ -1,6 +1,6 @@
 import pandas as pd
 from .base import BaseStrategy
-from ..config import MomentumConfig, VolExpansionConfig
+from ..config import MomentumConfig, VolExpansionConfig, log
 from ..utils import validate_column
 
 
