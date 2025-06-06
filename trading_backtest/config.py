@@ -8,6 +8,7 @@ from typing import Optional
 DATA_FILE = Path(os.environ.get("DATA_FILE", "data/btc_15m_data_from_2021.csv"))
 RESULTS_FILE = Path("results_live.csv")
 SUMMARY_FILE = Path("summary_live.csv")
+BEST_PARAMS_FILE = Path("best_params.csv")
 
 level_name = os.getenv("LOG_LEVEL", "INFO").upper()
 level = getattr(logging, level_name, logging.INFO)

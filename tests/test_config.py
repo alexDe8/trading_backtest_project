@@ -7,4 +7,4 @@ import trading_backtest.config as cfg
 def test_data_file_default(monkeypatch):
     monkeypatch.delenv("DATA_FILE", raising=False)
     importlib.reload(cfg)
-    assert cfg.DATA_FILE == Path("data/btc_15m_sample.csv")
+    assert cfg.DATA_FILE == Path("data/btc_15m_data_from_2021.csv")

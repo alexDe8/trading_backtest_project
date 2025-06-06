@@ -7,6 +7,7 @@ from .config import (
     RESULTS_FILE,
     SUMMARY_FILE,
     DATA_FILE,
+    BEST_PARAMS_FILE,
     log,
     SMAConfig,
     RSIConfig,
@@ -17,7 +18,7 @@ from .config import (
     RandomForestConfig,
 )
 from .data import load_price_data, add_indicator_cache
-from .utils.io_utils import save_csv
+from .utils.io_utils import save_csv, save_best_params
 from .optimize import (
     optimize_with_optuna,
     PARAM_SPACES,
@@ -162,6 +163,8 @@ def main(with_ml: bool = False) -> None:
             prune_logic=prune_func,
             n_trials=n_trials,
         )
+
+        save_best_params(best_trial.params, strategy_name, BEST_PARAMS_FILE)
 
         if strategy_name == "sma":
             sma_grid = refined_sma_grid(best_trial.params)
