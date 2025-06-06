@@ -18,6 +18,7 @@ from .config import (
     VolExpansionConfig,
     MACDConfig,
     StochasticConfig,
+    RandomForestConfig,
 )
 
 
@@ -103,6 +104,16 @@ class StochasticParamSpace(ParamSpace):
     tp_pct: tuple = ("int", 10, 25, 5)
 
 
+@dataclass
+class RandomForestParamSpace(ParamSpace):
+    n_estimators: tuple = ("int", 10, 50, 10)
+    max_depth: tuple = ("cat", [None, 3, 5, 7, 9])
+    entry_threshold: tuple = ("float", 0.5, 0.7, 0.05)
+    exit_threshold: tuple = ("float", 0.3, 0.5, 0.05)
+    sl_pct: tuple = ("int", 5, 10)
+    tp_pct: tuple = ("int", 10, 25, 5)
+
+
 # ---------------------- PARAMETRI STRATEGIE --------------------------
 PARAM_SPACES = {
     "sma": SMAParamSpace(),
@@ -113,6 +124,7 @@ PARAM_SPACES = {
     "vol_expansion": VolExpansionParamSpace(),
     "macd": MACDParamSpace(),
     "stochastic": StochasticParamSpace(),
+    "random_forest": RandomForestParamSpace(),
 }
 
 
@@ -378,6 +390,13 @@ def prune_stochastic(params, trial):
     """Prune stochastic trials with invalid stop or period setup."""
     check_sl_tp(params)
     if params["d_period"] > params["k_period"]:
+        raise optuna.TrialPruned()
+
+
+def prune_random_forest(params, trial):
+    """Prune RandomForest trials with invalid thresholds or stop settings."""
+    check_sl_tp(params)
+    if params["entry_threshold"] <= params["exit_threshold"]:
         raise optuna.TrialPruned()
 
 

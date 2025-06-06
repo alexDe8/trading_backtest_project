@@ -28,6 +28,7 @@ from .optimize import (
     prune_bollinger,
     prune_momentum,
     prune_vol_expansion,
+    prune_random_forest,
     refined_sma_grid,
     grid_search,
     ensure_indicator_cache,
@@ -83,8 +84,8 @@ STRATEGY_REGISTRY = {
     "random_forest": (
         RandomForestStrategy,
         RandomForestConfig,
-        PARAM_SPACES.get("random_forest", {}),
-        lambda params: None,  # Prune function dummy per ML, aggiorna se ne hai una
+        PARAM_SPACES["random_forest"],
+        prune_random_forest,
     ),
 }
 
