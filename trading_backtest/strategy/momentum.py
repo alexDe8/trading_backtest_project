@@ -1,6 +1,7 @@
 import pandas as pd
 from .base import BaseStrategy
-from ..config import MomentumConfig, VolExpansionConfig, log
+from ..config import MomentumConfig, VolExpansionConfig
+from ..utils import validate_column
 
 
 class VolatilityExpansionStrategy(BaseStrategy):
@@ -12,13 +13,7 @@ class VolatilityExpansionStrategy(BaseStrategy):
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         col = f"vol_{self.config.vol_window}"
-        if col not in df.columns:
-            raise KeyError(f"Colonna {col} mancante")
-        if df[col].isna().all():
-            log.debug(f"Colonna {col} tutta NaN!")
-        else:
-            log.debug(f"Colonna {col} OK. Stats:\n{df[col].describe()}")
-        df["v"] = df[col]
+        df["v"] = validate_column(df, col)
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:
@@ -37,13 +32,7 @@ class MomentumImpulseStrategy(BaseStrategy):
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         col = f"impulse_{self.config.window}"
-        if col not in df.columns:
-            raise KeyError(f"Colonna {col} mancante")
-        if df[col].isna().all():
-            log.debug(f"Colonna {col} tutta NaN!")
-        else:
-            log.debug(f"Colonna {col} OK. Stats:\n{df[col].describe()}")
-        df["imp"] = df[col]
+        df["imp"] = validate_column(df, col)
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:

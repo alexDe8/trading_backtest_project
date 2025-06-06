@@ -1,6 +1,7 @@
 import pandas as pd
 from .base import BaseStrategy
-from ..config import BreakoutConfig, log
+from ..config import BreakoutConfig
+from ..utils import validate_column
 
 
 class BreakoutStrategy(BaseStrategy):
@@ -16,13 +17,7 @@ class BreakoutStrategy(BaseStrategy):
             df[h_col] = df["close"].shift(1).rolling(self.config.lookback).max()
         df["h"] = df[h_col]
         atr_col = f"atr_{self.config.atr_period}"
-        if atr_col not in df.columns:
-            raise KeyError(f"Colonna {atr_col} mancante")
-        if df[atr_col].isna().all():
-            log.debug(f"Colonna {atr_col} tutta NaN!")
-        else:
-            log.debug(f"Colonna {atr_col} OK. Stats:\n{df[atr_col].describe()}")
-        df["atr"] = df[atr_col]
+        df["atr"] = validate_column(df, atr_col)
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:

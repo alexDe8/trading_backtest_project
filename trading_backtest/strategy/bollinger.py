@@ -1,6 +1,7 @@
 import pandas as pd
 from .base import BaseStrategy
-from ..config import BollingerConfig, log
+from ..config import BollingerConfig
+from ..utils import validate_column
 
 
 class BollingerBandStrategy(BaseStrategy):
@@ -16,10 +17,8 @@ class BollingerBandStrategy(BaseStrategy):
         if ma not in df:
             df[ma] = df["close"].rolling(self.config.period).mean().shift(1)
             df[sd] = df["close"].rolling(self.config.period).std().shift(1)
-        if df[ma].isna().all() or df[sd].isna().all():
-            log.debug(f"Colonne {ma}/{sd} contengono solo NaN!")
-        else:
-            log.debug(f"Bollinger {ma} OK. Stats:\n{df[ma].describe()}")
+        validate_column(df, ma)
+        validate_column(df, sd)
         df["ma"] = df[ma]
         df["lb"] = df[ma] - self.config.nstd * df[sd]
         return df

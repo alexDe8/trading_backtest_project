@@ -1,7 +1,8 @@
 from __future__ import annotations
 import pandas as pd
 from .base import BaseStrategy
-from ..config import SMAConfig, log
+from ..config import SMAConfig
+from ..utils import validate_column
 
 
 class SMACrossoverStrategy(BaseStrategy):
@@ -16,23 +17,12 @@ class SMACrossoverStrategy(BaseStrategy):
         fast_col = f"sma_{self.config.sma_fast}"
         slow_col = f"sma_{self.config.sma_slow}"
         for col in [fast_col, slow_col]:
-            if col not in df.columns:
-                raise KeyError(f"Colonna {col} mancante")
-            if df[col].isna().all():
-                log.debug(f"Colonna {col} tutta NaN!")
-            else:
-                log.debug(f"Colonna {col} OK. Stats:\n{df[col].describe()}")
+            validate_column(df, col)
         df["f"] = df[fast_col]
         df["s"] = df[slow_col]
         if self.config.sma_trend:
             trend_col = f"sma_{self.config.sma_trend}"
-            if trend_col not in df.columns:
-                raise KeyError(f"Colonna {trend_col} mancante")
-            if df[trend_col].isna().all():
-                log.debug(f"Colonna {trend_col} tutta NaN!")
-            else:
-                log.debug(f"Colonna {trend_col} OK. Stats:\n{df[trend_col].describe()}")
-            df["t"] = df[trend_col]
+            df["t"] = validate_column(df, trend_col)
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:
