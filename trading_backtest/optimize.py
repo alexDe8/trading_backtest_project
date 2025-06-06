@@ -343,8 +343,16 @@ def prune_sma(params, trial):
 
 
 def prune_rsi(params, trial):
-    """Prune RSI trials with invalid stop or take-profit."""
+    """Prune RSI trials with invalid parameters.
+
+    Besides stop/take-profit checks, ensure ``oversold`` stays within
+    a sensible range (0–50) and the period is positive.
+    """
     check_sl_tp(params)
+    if not (0 <= params["oversold"] <= 50):
+        raise optuna.TrialPruned()
+    if params["period"] <= 0:
+        raise optuna.TrialPruned()
 
 
 def prune_breakout(params, trial):
@@ -353,8 +361,12 @@ def prune_breakout(params, trial):
 
 
 def prune_bollinger(params, trial):
-    """Prune Bollinger trials with invalid stop or take-profit."""
+    """Prune Bollinger trials with invalid parameters."""
     check_sl_tp(params)
+    if params["nstd"] <= 0:
+        raise optuna.TrialPruned()
+    if params["period"] <= 0:
+        raise optuna.TrialPruned()
 
 
 def prune_momentum(params, trial):
