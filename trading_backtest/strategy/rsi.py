@@ -1,6 +1,7 @@
 import pandas as pd
 from .base import BaseStrategy
-from ..config import RSIConfig, log
+from ..config import RSIConfig
+from ..utils import validate_column
 
 
 class RSIStrategy(BaseStrategy):
@@ -12,13 +13,7 @@ class RSIStrategy(BaseStrategy):
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         col = f"rsi_{self.config.period}"
-        if col not in df.columns:
-            raise KeyError(f"Colonna {col} mancante")
-        if df[col].isna().all():
-            log.debug(f"Colonna {col} tutta NaN!")
-        else:
-            log.debug(f"Colonna {col} OK. Stats:\n{df[col].describe()}")
-        df["r"] = df[col]
+        df["r"] = validate_column(df, col)
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:
