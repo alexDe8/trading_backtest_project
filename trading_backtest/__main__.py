@@ -30,6 +30,7 @@ from .optimize import (
     prune_vol_expansion,
     refined_sma_grid,
     grid_search,
+    ensure_indicator_cache,
 )
 from .performance import PerformanceAnalyzer
 from .benchmark import benchmark_strategies
@@ -163,6 +164,7 @@ def main(with_ml: bool = False) -> None:
 
         if strategy_name == "sma":
             sma_grid = refined_sma_grid(best_trial.params)
+            ensure_indicator_cache(df, sma_grid)
             grid_df = grid_search(df, sma_grid)
             save_csv(grid_df, RESULTS_FILE)
             log.info("Grid SMA salvato in %s", RESULTS_FILE)
