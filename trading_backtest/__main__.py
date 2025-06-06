@@ -30,7 +30,7 @@ from .optimize import (
     prune_momentum,
     prune_vol_expansion,
     prune_random_forest,
-    refined_sma_grid,
+    refined_grid,
     grid_search,
     ensure_indicator_cache,
 )
@@ -41,7 +41,10 @@ from .strategy.sma import SMACrossoverStrategy
 from .strategy.rsi import RSIStrategy
 from .strategy.breakout import BreakoutStrategy
 from .strategy.bollinger import BollingerBandStrategy
-from .strategy.momentum import MomentumImpulseStrategy, VolatilityExpansionStrategy
+from .strategy.momentum import (
+    MomentumImpulseStrategy,
+    VolatilityExpansionStrategy,
+)
 from .strategy.random_forest import RandomForestStrategy
 
 # Registry dinamico per CLI
@@ -118,7 +121,9 @@ def main(with_ml: bool = False) -> None:
     if strategy_name not in STRATEGY_REGISTRY:
         raise SystemExit(f"Unknown strategy '{strategy_name}'")
 
-    strategy_cls, config_cls, param_space, prune_func = STRATEGY_REGISTRY[strategy_name]
+    strategy_cls, config_cls, param_space, prune_func = STRATEGY_REGISTRY[
+        strategy_name
+    ]
 
     # 1) Dati + indicatori -------------------------------------------------
     df = load_price_data(DATA_FILE)
@@ -166,12 +171,11 @@ def main(with_ml: bool = False) -> None:
 
         save_best_params(best_trial.params, strategy_name, BEST_PARAMS_FILE)
 
-        if strategy_name == "sma":
-            sma_grid = refined_sma_grid(best_trial.params)
-            ensure_indicator_cache(df, sma_grid)
-            grid_df = grid_search(df, sma_grid)
-            save_csv(grid_df, RESULTS_FILE)
-            log.info("Grid SMA salvato in %s", RESULTS_FILE)
+        grid = refined_grid(strategy_name, best_trial.params)
+        ensure_indicator_cache(df, grid)
+        grid_df = grid_search(df, grid, strategy_name)
+        save_csv(grid_df, RESULTS_FILE)
+        log.info("Grid %s salvato in %s", strategy_name.upper(), RESULTS_FILE)
 
     # 3) Benchmark completo: classiche + ML -------------------------------
     if args.benchmark:
