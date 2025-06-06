@@ -13,7 +13,18 @@ class VolatilityExpansionStrategy(BaseStrategy):
 
     def prepare_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         col = f"vol_{self.config.vol_window}"
+
         df["v"] = validate_column(df, col)
+
+        if col not in df.columns:
+            raise KeyError(f"Colonna {col} mancante")
+        if df[col].isna().all():
+            log.debug(f"Colonna {col} tutta NaN!")
+        else:
+            log.debug(f"Colonna {col} OK. Stats:\n{df[col].describe()}")
+        v = df[col].bfill().ffill()
+        df["v"] = v
+
         return df
 
     def entry_signal(self, df: pd.DataFrame) -> pd.Series:

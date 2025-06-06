@@ -13,6 +13,7 @@ from trading_backtest.optimize import (
     prune_vol_expansion,
     prune_macd,
     prune_stochastic,
+    prune_random_forest,
     SMAParamSpace,
     RSIParamSpace,
     BreakoutParamSpace,
@@ -21,6 +22,7 @@ from trading_backtest.optimize import (
     VolExpansionParamSpace,
     MACDParamSpace,
     StochasticParamSpace,
+    RandomForestParamSpace,
     check_sl_tp,
 )
 from trading_backtest.strategy import get_strategy
@@ -33,6 +35,7 @@ from trading_backtest.config import (
     VolExpansionConfig,
     MACDConfig,
     StochasticConfig,
+    RandomForestConfig,
 )
 
 
@@ -126,6 +129,12 @@ def test_optimize_instantiates_strategies():
         ),
         ("macd", MACDConfig, MACDParamSpace(), prune_macd),
         ("stochastic", StochasticConfig, StochasticParamSpace(), prune_stochastic),
+        (
+            "random_forest",
+            RandomForestConfig,
+            RandomForestParamSpace(),
+            prune_random_forest,
+        ),
     ]
     for name, cfg_cls, space, prune in configs:
         strategy_cls, _ = get_strategy(name)
