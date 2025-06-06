@@ -72,7 +72,7 @@ def _dummy_df() -> pd.DataFrame:
         ),
         (
             "vol_expansion",
-            VolExpansionConfig(vol_window=20, vol_threshold=0.4, sl_pct=1, tp_pct=2),
+            VolExpansionConfig(vol_window=20, vol_threshold=0.01, sl_pct=1, tp_pct=2),
         ),
         ("macd", MACDConfig(fast=12, slow=26, signal=9, sl_pct=1, tp_pct=2)),
         (

@@ -81,7 +81,7 @@ class MomentumParamSpace(ParamSpace):
 @dataclass
 class VolExpansionParamSpace(ParamSpace):
     vol_window: tuple = ("int", 20, 100, 5)
-    vol_threshold: tuple = ("float", 0.6, 1.0, 0.05)
+    vol_threshold: tuple = ("float", 0.005, 0.02, 0.001)
     sl_pct: tuple = ("int", 5, 10)
     tp_pct: tuple = ("int", 10, 25, 5)
 
