@@ -69,7 +69,43 @@ Per eseguire un benchmark veloce di tutte le strategie:
 python run.py --benchmark
 ```
 
+
 Impostando la variabile `RUN_ML=1` viene inclusa anche la strategia RandomForest.
+
+## Utilizzo della CLI
+
+Il progetto può essere avviato con `python run.py` oppure `python -m trading_backtest`.
+Le opzioni principali sono:
+
+- `--strategy` – nome della strategia da ottimizzare. Se omesso viene usata la
+  variabile d'ambiente `STRATEGY` (default `sma`).
+- `--trials` – numero di iterazioni di Optuna per la ricerca dei parametri
+  (env `TRIALS`, default 50).
+- `--benchmark` – esegue l'ottimizzazione di tutte le strategie e produce un
+  riepilogo in `summary_live.csv` (env `BENCHMARK=1`).
+
+Variabili utili:
+
+- `DATA_FILE` – percorso del CSV con i prezzi.
+- `RUN_ML=1` – durante il benchmark include anche la strategia RandomForest.
+- `LOG_LEVEL` – livello di log a schermo (`INFO`, `DEBUG`, ecc.).
+
+Esempi di avvio:
+
+```bash
+python run.py --strategy rsi --trials 200   # ottimizza la strategia RSI
+python run.py --benchmark                   # ottimizza tutte le strategie
+```
+
+### Strategie disponibili
+
+- **sma** – incrocio di medie mobili veloci e lente.
+- **rsi** – ingresso su ipervenduto RSI.
+- **breakout** – rottura di un massimo relativo con filtro ATR.
+- **bollinger** – breakout delle bande di Bollinger.
+- **momentum** – strategia basata sullo slancio dei prezzi.
+- **vol_expansion** – opera quando la volatilità supera una soglia.
+- **random_forest** – classificatore ML basato su Random Forest.
 
 ## Sviluppo
 
