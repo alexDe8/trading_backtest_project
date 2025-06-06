@@ -147,3 +147,21 @@ def test_check_sl_tp_pruning():
     check_sl_tp({"sl_pct": 5, "tp_pct": 10})
     with pytest.raises(optuna.TrialPruned):
         check_sl_tp({"sl_pct": 10, "tp_pct": 5})
+
+
+def test_prune_rsi_parameters():
+    """RSI oversold must be within 0–50."""
+    params = {"period": 14, "oversold": 30, "sl_pct": 1, "tp_pct": 2}
+    prune_rsi(params, None)  # Should not raise
+    params["oversold"] = 60
+    with pytest.raises(optuna.TrialPruned):
+        prune_rsi(params, None)
+
+
+def test_prune_bollinger_parameters():
+    """Bollinger nstd must be positive."""
+    params = {"period": 20, "nstd": 2.0, "sl_pct": 1, "tp_pct": 2}
+    prune_bollinger(params, None)  # Should not raise
+    params["nstd"] = -1
+    with pytest.raises(optuna.TrialPruned):
+        prune_bollinger(params, None)
