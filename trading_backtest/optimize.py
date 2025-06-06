@@ -537,15 +537,74 @@ def refined_sma_grid(best: dict[str, Any]) -> list[dict[str, Any]]:
     return grid
 
 
-# ---------------------- GRID SEARCH ---------------------------
-def grid_search(df: pd.DataFrame, combos: list[dict[str, Any]]) -> pd.DataFrame:
-    """Evaluate all SMA parameter combinations and rank the results."""
+def _around_range(
+    val: float, low: float, high: float, step: float, n: int = 2
+) -> list[float]:
+    """Return ``val`` +/- ``n`` * ``step`` within ``low``–``high`` bounds."""
 
-    log.info("Grid SMA – %d combo", len(combos))
+    out = []
+    for i in range(-n, n + 1):
+        v = val + i * step
+        if low <= v <= high:
+            out.append(type(val)(v))
+    return sorted(set(out))
+
+
+def refined_grid(strategy_name: str, best: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Return a small parameter grid around ``best`` for ``strategy_name``."""
+
+    if strategy_name == "sma":
+        return refined_sma_grid(dict(best))
+
+    ps = PARAM_SPACES[strategy_name]
+
+    ranges: dict[str, list[Any]] = {}
+    for f in fields(ps):
+        info = getattr(ps, f.name)
+        kind, low, high, *rest = info
+        step = rest[0] if rest else (1 if kind == "int" else (high - low) / 10)
+        val = best[f.name]
+        if kind == "cat":
+            values = [val]
+        else:
+            values = _around_range(val, low, high, step)
+        ranges[f.name] = values
+
+    grid = []
+    keys = list(ranges)
+    for combo in product(*[ranges[k] for k in keys]):
+        params = dict(zip(keys, combo))
+        if (
+            "sl_pct" in params
+            and "tp_pct" in params
+            and params["sl_pct"] >= params["tp_pct"]
+        ):
+            continue
+        if strategy_name == "macd" and params["fast"] >= params["slow"]:
+            continue
+        if strategy_name == "stochastic" and params["d_period"] > params["k_period"]:
+            continue
+        if (
+            strategy_name == "random_forest"
+            and params["entry_threshold"] <= params["exit_threshold"]
+        ):
+            continue
+        grid.append(params)
+
+    return grid
+
+
+# ---------------------- GRID SEARCH ---------------------------
+def grid_search(
+    df: pd.DataFrame, combos: list[dict[str, Any]], strategy_name: str
+) -> pd.DataFrame:
+    """Evaluate parameter combinations for ``strategy_name`` and rank the results."""
+
+    log.info("Grid %s – %d combo", strategy_name.upper(), len(combos))
     results = []
-    strategy_cls, _ = get_strategy("sma")
-    for p in tqdm(combos, desc="SMA"):
-        cfg = SMAConfig(**p)
+    strategy_cls, config_cls = get_strategy(strategy_name)
+    for p in tqdm(combos, desc=strategy_name.upper()):
+        cfg = config_cls(**p)
         ret = evaluate_strategy(df, lambda cfg=cfg: strategy_cls(cfg))
         results.append({**p, "total_return": ret})
     return pd.DataFrame(results).sort_values("total_return", ascending=False)
