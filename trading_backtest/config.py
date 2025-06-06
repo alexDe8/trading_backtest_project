@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 # Usa variabile d'ambiente se disponibile, altrimenti path relativo al progetto
-DATA_FILE = Path(os.environ.get("DATA_FILE", "data/btc_15m_data_2018_to_2025.csv"))
+DATA_FILE = Path(os.environ.get("DATA_FILE", "data/btc_15m_sample.csv"))
 RESULTS_FILE = Path("results_live.csv")
 SUMMARY_FILE = Path("summary_live.csv")
 
